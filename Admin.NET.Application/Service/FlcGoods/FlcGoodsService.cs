@@ -176,6 +176,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
               {"零售价","RetailPrice" },
               {"参考成本价","costPrice" },
               {"基本单位","Unit" },
+              {"备注","PrintCustom" },
         };
         Dictionary<string, int> keyIndex = new Dictionary<string, int>();
         foreach (var key in headList.Keys)

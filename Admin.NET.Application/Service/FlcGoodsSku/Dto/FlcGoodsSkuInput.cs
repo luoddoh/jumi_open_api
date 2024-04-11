@@ -38,6 +38,7 @@ namespace Admin.NET.Application;
 
     public decimal SalesPrice { get; set; }
 
+    public virtual string? PrintCustom { get; set; }
 }
 
     /// <summary>

@@ -32,6 +32,8 @@ public class FlcInventoryService : IDynamicApiController, ITransient
             .LeftJoin<FlcGoods>((u, skuid,goods) => skuid.GoodsId==goods.Id)
             .LeftJoin<FlcGoodsUnit>((u, skuid, goods,unit) => skuid.UnitId == unit.Id)
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), (u, skuid, goods, unit) => goods.GoodsName.Contains(input.SearchKey.Trim()))
+            .WhereIF(input.MinTotalAmount!=null,u=>u.TotalAmount<= input.MinTotalAmount)
+            .WhereIF(input.MaxTotalAmount != null, u => u.TotalAmount >= input.MaxTotalAmount)
             .Where((u, skuid, goods)=>skuid.IsDelete==false&&goods.IsDelete==false)
             //.OrderBy(u => u.CreateTime)
             .Select((u, skuid, goods, unit) => new FlcInventoryOutput

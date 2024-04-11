@@ -80,6 +80,8 @@ public class FlcProcureDetailOutput
 
     public string? BarCodeList {  get; set; }
 
+    public string? PrintCustom { get; set; }
+
     public List<labval> speValueList { get; set; }
 
 

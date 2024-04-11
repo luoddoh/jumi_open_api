@@ -115,7 +115,6 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
     public async Task Print([FromQuery] PrintInput input)
     {
         var row = _rep.AsQueryable().Where(x=>x.Id==input.Id).First();
-        row.PrintNum+=input.Num;
         if (row.PrintNum == null)
         {
             row.PrintNum = input.Num;
@@ -276,7 +275,8 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
                 GoodsName=x.flcGoods.GoodsName,
                 UnitName=x.flcGoodsSku.flcGoodsUnit.UnitName,
                 PrintNum=x.PrintNum == null ? 0 : x.PrintNum,
-                BarCodeList=x.BarCodeList
+                BarCodeList=x.BarCodeList,
+                PrintCustom=x.flcGoodsSku.PrintCustom,
             }).ToList();
         db.ThenMapper(list, pdetail =>
         {

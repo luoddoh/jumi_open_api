@@ -78,6 +78,8 @@ public class FlcGoodsSkuOutputs
 
     public decimal? SalesPrice { get; set; }
 
+    public string? PrintCustom { get; set; }
+
     public List<labval> speValueList { get; set; }
 }
 

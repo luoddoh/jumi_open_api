@@ -39,8 +39,16 @@ namespace Admin.NET.Application;
         /// 总价格
         /// </summary>
         public decimal? TotalAmount { get; set; }
-        
-    }
+
+        /// <summary>
+        /// 总价格小于
+        /// </summary>
+        public decimal? MinTotalAmount { get; set; }
+        /// <summary>
+        /// 总价格大于
+        /// </summary>
+        public decimal? MaxTotalAmount { get; set; }
+}
 
     /// <summary>
     /// 库存查询增加输入参数

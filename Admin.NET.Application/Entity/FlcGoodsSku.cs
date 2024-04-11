@@ -54,6 +54,13 @@ public class FlcGoodsSku  : EntityBaseData
     [SugarColumn(ColumnName = "SalesPrice", ColumnDescription = "销售价", Length = 18, DecimalDigits=2 )]
     public decimal? SalesPrice { get; set; }
 
+    /// <summary>
+    /// 打印自定义字段
+    /// </summary>
+    [Required]
+    [SugarColumn(ColumnName = "PrintCustom", ColumnDescription = "打印自定义字段", Length = 200)]
+    public string? PrintCustom { get; set; }
+
     [Navigate(NavigateType.OneToMany, nameof(FlcSkuSpeValue.SkuId))]
     public List<FlcSkuSpeValue> SpeValueList { get; set; }
 
