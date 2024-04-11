@@ -310,4 +310,15 @@ public class SysUser : EntityTenant
     [SugarColumn(ColumnDescription = "电子签名", Length = 512)]
     [MaxLength(512)]
     public string? Signature { get; set; }
+
+    /// <summary>
+    /// 是否供应商
+    /// </summary>
+    [SugarColumn(ColumnDescription = "是否供应商")]
+    public bool? Isinventory { get; set; }
+    /// <summary>
+    /// 供应商id
+    /// </summary>
+    [SugarColumn(ColumnDescription = "供应商id")]
+    public long? supplierId { get; set; }
 }

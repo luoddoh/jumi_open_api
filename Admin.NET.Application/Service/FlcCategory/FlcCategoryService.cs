@@ -56,6 +56,10 @@ public class FlcCategoryService : IDynamicApiController, ITransient
     public async Task<long> Add(AddFlcCategoryInput input)
     {
         var entity = input.Adapt<FlcCategory>();
+        if (entity.SuperiorId == null)
+        {
+            entity.SuperiorId = 0;
+        }
         var clist=_rep.AsQueryable().Where(u=>u.IsDelete==false).ToList();
         bool ok=true;
         foreach (var c in clist)
@@ -89,10 +93,11 @@ public class FlcCategoryService : IDynamicApiController, ITransient
     {
         var entity = await _rep.GetFirstAsync(u => u.Id == input.Id) ?? throw Oops.Oh(ErrorCodeEnum.D1002);
         var zlist=_rep.AsQueryable().Where(u=>u.SuperiorId==entity.Id&&u.IsDelete==false).First();
-        if (zlist == null)
+        var goods= _rep.Context.Queryable<FlcGoods>().Where(u=>u.IsDelete == false&&u.CategoryId==entity.Id).First();
+        if (zlist == null&& goods==null)
         {
-            await _rep.FakeDeleteAsync(entity);   //假删除
-            //await _rep.DeleteAsync(entity);   //真删除
+            //await _rep.FakeDeleteAsync(entity);   //假删除
+            await _rep.DeleteAsync(entity);   //真删除
         }
         else
         {
@@ -154,7 +159,7 @@ public class FlcCategoryService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "List")]
     public async Task<List<FlcCategoryOutput>> List([FromQuery] FlcCategoryInput input)
     {
-        return await _rep.AsQueryable().Select<FlcCategoryOutput>().ToListAsync();
+        return await _rep.AsQueryable().Where(u => u.IsDelete == false).Select<FlcCategoryOutput>().ToListAsync();
     }
 
 
@@ -164,7 +169,7 @@ public class FlcCategoryService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "FlcCategoryTree")]
     public async Task<dynamic> FlcCategoryTree()
     {
-        return await _rep.Context.Queryable<FlcCategory>().ToTreeAsync(u => u.Children, u => u.SuperiorId, 0);
+        return await _rep.Context.Queryable<FlcCategory>().Where(u => u.IsDelete == false).ToTreeAsync(u => u.Children, u => u.SuperiorId, 0);
     }
 
 }

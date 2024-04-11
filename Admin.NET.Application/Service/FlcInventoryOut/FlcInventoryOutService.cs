@@ -91,7 +91,7 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
                 u.DocNumber.Contains(input.SearchKey.Trim())
             )
             .WhereIF(input.Uid!=null,u=>u.Operator==input.Uid)
-            .WhereIF((!string.IsNullOrEmpty(input.State) && input.State!="0"), u => u.State == input.State)
+            .WhereIF((!string.IsNullOrEmpty(input.State) && input.State!="0" ), u => u.State == input.State)
             .WhereIF(!string.IsNullOrWhiteSpace(input.OutType)&& input.OutType!="0", u => u.OutType == input.OutType)
             .WhereIF(input.Reviewer > 0, u => u.Reviewer == input.Reviewer)
             //处理外键和TreeSelector相关字段的连接

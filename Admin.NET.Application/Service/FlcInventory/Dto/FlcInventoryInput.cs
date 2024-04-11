@@ -48,6 +48,15 @@ namespace Admin.NET.Application;
         /// 总价格大于
         /// </summary>
         public decimal? MaxTotalAmount { get; set; }
+
+    /// <summary>
+    /// 库存量小于
+    /// </summary>
+    public int? minNumber { get; set; }
+    /// <summary>
+    /// 库存量大于
+    /// </summary>
+    public int? maxNumber { get; set; }
 }
 
     /// <summary>

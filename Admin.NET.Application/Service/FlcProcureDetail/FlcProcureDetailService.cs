@@ -70,7 +70,7 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
                 }
                 if (barCodeList.Count > input.purchaseNum)
                 {
-                    barCodeList.RemoveRange(input.purchaseNum - 1, barCodeList.Count - 1);
+                    barCodeList.RemoveRange(input.purchaseNum - 1, barCodeList.Count - input.purchaseNum);
                 }
                 else if (barCodeList.Count < input.purchaseNum)
                 {
@@ -106,7 +106,7 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
     }
 
     /// <summary>
-    /// 更新采购明细
+    /// 打印
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
@@ -178,7 +178,7 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
         procure.State = 400;
         foreach(var item in on_detail)
         {
-            if (item.okNum <= item.purchaseNum)
+            if (item.okNum < item.purchaseNum)
             {
                 procure.State = 300;
             }
@@ -188,37 +188,27 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
 
     [HttpGet]
     [ApiDescriptionSettings(Name = "BarCodeInfoDetail")]
-    public async Task<FlcProcureDetailOutput> BarCodeInfoDetail([FromQuery] CodeInput BarCode)
+    public async Task<FlcskuDetailOutput> BarCodeInfoDetail([FromQuery] CodeInput BarCode)
     {
-        var quer = _rep.AsQueryable()
-            .Where(u => u.IsDelete == false && u.BarCodeList.Contains(BarCode.Code))
-            .LeftJoin<FlcGoodsSku>((u, k) => u.SkuId == k.Id)
-            .LeftJoin<FlcGoods>((u, k, g) => k.GoodsId == g.Id)
-            .LeftJoin<FlcGoodsUnit>((u, k, g,t) => k.UnitId == t.Id)
-            .LeftJoin<FlcInventory>((u, k, g, t,i) => u.SkuId == i.SkuId)
-            .Select((u, k, g, t,i) => new FlcProcureDetailOutput
+        string code = BarCode.Code.Substring(0,7);
+        var quer = _rep.Context.Queryable<FlcGoodsSku>()
+            .LeftJoin<FlcGoods>((k, g) => k.GoodsId == g.Id)
+            .LeftJoin<FlcGoodsUnit>((k, g, t) => k.UnitId == t.Id)
+            .LeftJoin<FlcInventory>((k, g, t, i) => k.Id == i.SkuId)
+            .Where((k, g, t, i) => k.BarCode == code && k.IsDelete == false)
+            .Select((k, g, t, i) => new FlcskuDetailOutput
             {
-                Id = u.Id,
-                GoodsId = u.GoodsId,
-                SkuId = u.SkuId,
-                InventoryNum = i.Number,
-                noNum = u.noNum,
-                okNum = u.okNum,
-                ProcureId = u.ProcureId,
-                purchaseNum = u.purchaseNum,
-                purchasePrice = u.purchasePrice,
-                remark = u.remark,
+                Id = k.Id,
+                goodsName = g.GoodsName,
                 SkuImage = k.CoverImage,
-                totalAmount = u.totalAmount,
-                GoodsName = g.GoodsName,
                 UnitName = t.UnitName,
-                PrintNum = u.PrintNum == null ? 0 : u.PrintNum,
-                BarCodeList = u.BarCodeList
+                InventoryNum=i.Number,
+                Price=k.CostPrice,
             }).First();
         if (quer != null)
         {
             quer.speValueList = _rep_v.AsQueryable().Includes(x => x.FlcSpecificationValue)
-            .Where(x => x.IsDelete == false && x.SkuId == quer.SkuId)
+            .Where(x => x.IsDelete == false && x.SkuId == quer.Id)
             .Select(x => new labval
             {
                 Id = x.SpeValueId,

@@ -12,6 +12,10 @@ namespace Admin.NET.Application.Service.FlcProcureReturnDetail.Dto;
 public class FlcProcureReturnDetailOutput
 {
     /// <summary>
+    /// Id
+    /// </summary>
+    public long? Id { get; set; }
+    /// <summary>
     /// 退货单Id
     /// </summary>
     public long ReturnId { get; set; }

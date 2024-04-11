@@ -32,6 +32,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
         var list = db.Queryable<FlcGoodsSku>()
            .Includes(x => x.flcGoods)
            .Includes(x => x.flcGoodsUnit)
+           .Where(x=>x.IsDelete==false&&x.flcGoods.IsDelete==false)
            .LeftJoin<FlcInventory>((x,p)=>x.Id==p.SkuId)
            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey),x=>x.flcGoods.GoodsName.Contains(input.SearchKey))
            .WhereIF(!string.IsNullOrWhiteSpace(input.BarCode), x => x.BarCode==input.BarCode)
@@ -111,10 +112,18 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
             bool isdel = true;
             foreach (var input in inputs)
             {
-                if (FlcGoodsSku.GoodsId == input.GoodsId && FlcGoodsSku.BarCode == input.BarCode)
+                var barcode_row= db.Queryable<FlcGoodsSku>().Where(x=>x.IsDelete==false&&x.BarCode == input.BarCode&&x.GoodsId!=input.GoodsId).First();
+                if (barcode_row != null)
                 {
-                    isdel = false;
-                    break;
+                    throw Oops.Oh(ErrorCodeEnum.D1006);
+                }
+                else
+                {
+                    if (FlcGoodsSku.GoodsId == input.GoodsId && FlcGoodsSku.BarCode == input.BarCode)
+                    {
+                        isdel = false;
+                        break;
+                    }
                 }
             }
             if (isdel)

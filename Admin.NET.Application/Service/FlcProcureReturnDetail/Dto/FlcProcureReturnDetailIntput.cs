@@ -10,6 +10,10 @@ public class FlcProcureReturnDetailIntput
 public class FlcProcureReturnDetailUpdate
 {
     /// <summary>
+    /// Id
+    /// </summary>
+    public long? Id { get; set; }
+    /// <summary>
     /// 退货单Id
     /// </summary>
     public long ReturnId { get; set; }

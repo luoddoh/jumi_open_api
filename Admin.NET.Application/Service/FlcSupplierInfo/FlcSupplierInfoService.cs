@@ -25,6 +25,7 @@ public class FlcSupplierInfoService : IDynamicApiController, ITransient
     public async Task<SqlSugarPagedList<FlcSupplierInfoOutput>> Page(FlcSupplierInfoInput input)
     {
         var query = _rep.AsQueryable()
+            .Where(u=>u.IsDelete==false)
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), u =>
                 u.SupName.Contains(input.SearchKey.Trim())
             )
@@ -53,8 +54,25 @@ public class FlcSupplierInfoService : IDynamicApiController, ITransient
     public async Task<long> Add(AddFlcSupplierInfoInput input)
     {
         var entity = input.Adapt<FlcSupplierInfo>();
-        await _rep.InsertAsync(entity);
-        return entity.Id;
+        var clist = _rep.AsQueryable().Where(u => u.IsDelete == false).ToList();
+        bool ok = true;
+        foreach (var c in clist)
+        {
+            if (c.SupName == entity.SupName)
+            {
+                ok = false;
+                break;
+            }
+        }
+        if (ok)
+        {
+            await _rep.InsertAsync(entity);
+            return entity.Id;
+        }
+        else
+        {
+            throw Oops.Oh(ErrorCodeEnum.D1006);
+        }
     }
 
     /// <summary>
@@ -105,7 +123,7 @@ public class FlcSupplierInfoService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "List")]
     public async Task<List<FlcSupplierInfoOutput>> List([FromQuery] FlcSupplierInfoInput input)
     {
-        return await _rep.AsQueryable().Select<FlcSupplierInfoOutput>().ToListAsync();
+        return await _rep.AsQueryable().Where(u => u.IsDelete == false).Select<FlcSupplierInfoOutput>().ToListAsync();
     }
 
 

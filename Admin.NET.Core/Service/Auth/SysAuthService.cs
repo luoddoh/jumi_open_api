@@ -237,7 +237,9 @@ public class SysAuthService : IDynamicApiController, ITransient
             OrgType = org?.Type,
             PosName = pos?.Name,
             Buttons = buttons,
-            RoleIds = roleIds
+            RoleIds = roleIds,
+            Isinventory = user.Isinventory,
+            supplierId=user.supplierId,
         };
     }
 

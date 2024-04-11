@@ -72,6 +72,7 @@ public class FlcProcureReturnDetailService : IDynamicApiController, ITransient
             .Where(x=>x.ReturnId==input.ReturnId&&x.IsDelete==false)
             .Select((x,inv,good, unit) =>new FlcProcureReturnDetailOutput()
             {
+                Id=x.Id,
                 GoodsId = x.ReturnId,
                 ReturnId = x.ReturnId,
                 ReturnNum=x.ReturnNum,

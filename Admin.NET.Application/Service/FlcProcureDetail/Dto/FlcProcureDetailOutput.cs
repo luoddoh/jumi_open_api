@@ -87,6 +87,15 @@ public class FlcProcureDetailOutput
 
 }
 
+public class FlcskuDetailOutput
+{
+    public long Id { get; set; }
+    public string goodsName { get; set; }
+    public string SkuImage { get; set; }
+    public string UnitName { get; set; }
+    public int InventoryNum { get; set; }
+    public decimal? Price { get; set; }
+    public List<labval> speValueList { get; set; }
+}
 
- 
 

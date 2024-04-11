@@ -49,14 +49,14 @@ public class FlcProcureDetail  : EntityBaseData
     public int purchaseNum { get; set; }
     
     /// <summary>
-    /// 未到数量
+    /// 已到数量
     /// </summary>
     [Required]
     [SugarColumn(ColumnName = "okNum", ColumnDescription = "已到数量")]
     public int okNum { get; set; }
     
     /// <summary>
-    /// 已到数量
+    /// 未到数量
     /// </summary>
     [Required]
     [SugarColumn(ColumnName = "noNum", ColumnDescription = "未到数量")]

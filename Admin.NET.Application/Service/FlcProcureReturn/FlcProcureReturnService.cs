@@ -32,7 +32,8 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
             .WhereIF(input.SupplierId>0, u => u.SupplierId == input.SupplierId)
             .WhereIF(input.Returner>0, u => u.Returner == input.Returner)
-            .WhereIF((input.uid > 0 && input.uid != 1300000000101 && input.uid != 1300000000111), u => u.Returner == input.uid)
+            .WhereIF((input.uid > 0 && input.uid != 1300000000101 && input.uid != 1300000000111 && (input.Isinventory == null || input.Isinventory == false)), u => u.Returner == input.uid)
+            .WhereIF((input.Isinventory == true), u => u.SupplierId == input.userSupplierId)
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, returner) => u.Returner == returner.Id )
             .LeftJoin<SysUser>((u, returner, reviewer) => u.Reviewer == reviewer.Id )

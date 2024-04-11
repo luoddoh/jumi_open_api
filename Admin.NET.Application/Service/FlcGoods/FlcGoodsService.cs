@@ -70,8 +70,16 @@ public class FlcGoodsService : IDynamicApiController, ITransient
     public async Task<long> Add(AddFlcGoodsInput input)
     {
         var entity = input.Adapt<FlcGoods>();
-        await _rep.InsertAsync(entity);
-        return entity.Id;
+        var list = _rep.AsQueryable().Where(u => u.IsDelete == false && u.GoodsName == entity.GoodsName).First();
+        if(list == null)
+        {
+            await _rep.InsertAsync(entity);
+            return entity.Id;
+        }
+        else
+        {
+            throw Oops.Oh(ErrorCodeEnum.D1006);
+        }
     }
 
     /// <summary>
@@ -176,7 +184,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
               {"零售价","RetailPrice" },
               {"参考成本价","costPrice" },
               {"基本单位","Unit" },
-              {"备注","PrintCustom" },
+              {"说明","PrintCustom" },
         };
         Dictionary<string, int> keyIndex = new Dictionary<string, int>();
         foreach (var key in headList.Keys)
@@ -466,6 +474,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                 UnitId = UnitId,
                 CostPrice = string.IsNullOrEmpty(input.costPrice) ? null : Convert.ToDecimal(input.costPrice),
                 SalesPrice = string.IsNullOrEmpty(input.RetailPrice) ? null : Convert.ToDecimal(input.RetailPrice),
+                PrintCustom= input.PrintCustom,
                 BarCode = input.BarCard
             };
             long id = _rep.Context.Insertable(sku).ExecuteReturnSnowflakeId();

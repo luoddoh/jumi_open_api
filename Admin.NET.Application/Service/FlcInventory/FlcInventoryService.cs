@@ -34,6 +34,8 @@ public class FlcInventoryService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), (u, skuid, goods, unit) => goods.GoodsName.Contains(input.SearchKey.Trim()))
             .WhereIF(input.MinTotalAmount!=null,u=>u.TotalAmount<= input.MinTotalAmount)
             .WhereIF(input.MaxTotalAmount != null, u => u.TotalAmount >= input.MaxTotalAmount)
+            .WhereIF(input.minNumber != null, u => u.Number <= input.minNumber)
+            .WhereIF(input.maxNumber != null, u => u.Number >= input.maxNumber)
             .Where((u, skuid, goods)=>skuid.IsDelete==false&&goods.IsDelete==false)
             //.OrderBy(u => u.CreateTime)
             .Select((u, skuid, goods, unit) => new FlcInventoryOutput

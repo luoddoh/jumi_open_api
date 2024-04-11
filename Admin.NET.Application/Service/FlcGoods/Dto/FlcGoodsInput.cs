@@ -169,4 +169,5 @@ public class UploadFileGoodsInput
     /// 基本单位
     /// </summary>
     public string? Unit { set; get; }
+    public string? PrintCustom { set; get; }
 }

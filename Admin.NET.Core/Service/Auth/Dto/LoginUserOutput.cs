@@ -93,4 +93,13 @@ public class LoginUserOutput
     /// 角色集合
     /// </summary>
     public List<long> RoleIds { get; set; }
+
+    /// <summary>
+    /// 是否供应商
+    /// </summary>
+    public bool? Isinventory { get; set; }
+    /// <summary>
+    /// 供应商id
+    /// </summary>
+    public long? supplierId { get; set; }
 }

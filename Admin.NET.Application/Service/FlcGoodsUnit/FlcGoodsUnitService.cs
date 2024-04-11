@@ -132,7 +132,7 @@ public class FlcGoodsUnitService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "List")]
     public async Task<List<FlcGoodsUnitOutput>> List([FromQuery] FlcGoodsUnitInput input)
     {
-        return await _rep.AsQueryable().Select<FlcGoodsUnitOutput>().ToListAsync();
+        return await _rep.AsQueryable().Where(u=>u.IsDelete==false).Select<FlcGoodsUnitOutput>().ToListAsync();
     }
 
 

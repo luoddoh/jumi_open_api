@@ -112,8 +112,20 @@ namespace Admin.NET.Application;
         /// 采购员
         /// </summary>
         public long? Purchaser { get; set; }
-        
-    }
+
+    /// <summary>
+    /// 是否是验货查询
+    /// </summary>
+    public string? Qtype { get; set; }
+    /// <summary>
+    /// 是否供应商
+    /// </summary>
+    public bool? Isinventory { get; set; }
+    /// <summary>
+    /// 供应商id
+    /// </summary>
+    public long? userSupplierId { get; set; }
+}
 
     /// <summary>
     /// 采购订货列表增加输入参数

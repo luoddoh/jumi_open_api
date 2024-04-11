@@ -84,8 +84,16 @@ namespace Admin.NET.Application;
         /// <summary>
          /// 退货时间范围
          /// </summary>
-         public List<DateTime?> ReturnTimeRange { get; set; } 
-    }
+         public List<DateTime?> ReturnTimeRange { get; set; }
+    /// <summary>
+    /// 是否供应商
+    /// </summary>
+    public bool? Isinventory { get; set; }
+    /// <summary>
+    /// 供应商id
+    /// </summary>
+    public long? userSupplierId { get; set; }
+}
 
     /// <summary>
     /// 采购退货列表增加输入参数

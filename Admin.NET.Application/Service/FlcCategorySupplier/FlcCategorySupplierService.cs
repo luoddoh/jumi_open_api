@@ -53,8 +53,29 @@ public class FlcCategorySupplierService : IDynamicApiController, ITransient
     public async Task<long> Add(AddFlcCategorySupplierInput input)
     {
         var entity = input.Adapt<FlcCategorySupplier>();
-        await _rep.InsertAsync(entity);
-        return entity.Id;
+        if (entity.SuperiorId == null)
+        {
+            entity.SuperiorId = 0;
+        }
+        var clist = _rep.AsQueryable().Where(u => u.IsDelete == false).ToList();
+        bool ok = true;
+        foreach (var c in clist)
+        {
+            if (c.CategoryName == entity.CategoryName)
+            {
+                ok = false;
+                break;
+            }
+        }
+        if (ok)
+        {
+            await _rep.InsertAsync(entity);
+            return entity.Id;
+        }
+        else
+        {
+            throw Oops.Oh(ErrorCodeEnum.D1006);
+        }
     }
 
     /// <summary>
@@ -68,10 +89,11 @@ public class FlcCategorySupplierService : IDynamicApiController, ITransient
     {
         var entity = await _rep.GetFirstAsync(u => u.Id == input.Id) ?? throw Oops.Oh(ErrorCodeEnum.D1002);
         var zlist = _rep.AsQueryable().Where(u => u.SuperiorId == entity.Id && u.IsDelete == false).First();
-        if (zlist == null)
+        var Supp = _rep.Context.Queryable<FlcSupplierInfo>().Where(u => u.IsDelete == false && u.CategoryId == entity.Id).First();
+        if (zlist == null && Supp ==null)
         {
-            await _rep.FakeDeleteAsync(entity);   //假删除
-            //await _rep.DeleteAsync(entity);   //真删除
+            //await _rep.FakeDeleteAsync(entity);   //假删除
+            await _rep.DeleteAsync(entity);   //真删除
         }
         else
         {
@@ -113,7 +135,7 @@ public class FlcCategorySupplierService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "List")]
     public async Task<List<FlcCategorySupplierOutput>> List([FromQuery] FlcCategorySupplierInput input)
     {
-        return await _rep.AsQueryable().Select<FlcCategorySupplierOutput>().ToListAsync();
+        return await _rep.AsQueryable().Where(u => u.IsDelete == false).Select<FlcCategorySupplierOutput>().ToListAsync();
     }
 
 
@@ -123,7 +145,7 @@ public class FlcCategorySupplierService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "FlcCategorySupplierTree")]
     public async Task<dynamic> FlcCategorySupplierTree()
     {
-        return await _rep.Context.Queryable<FlcCategorySupplier>().ToTreeAsync(u => u.Children, u => u.SuperiorId, 0);
+        return await _rep.Context.Queryable<FlcCategorySupplier>().Where(u => u.IsDelete == false).ToTreeAsync(u => u.Children, u => u.SuperiorId, 0);
     }
 
 }
