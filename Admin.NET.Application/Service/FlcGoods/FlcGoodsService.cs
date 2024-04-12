@@ -198,7 +198,8 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                 }
             }
             keyIndex.Add(headList[key],index);
-        }
+        } 
+        List<string> barcodelist = new List<string>();
         List<SpeListValue> spe = new List<SpeListValue>();
         List<Dictionary<string, string>> listAll = new List<Dictionary<string, string>>();
         for (int i = 1;i <= sheet.LastRowNum; i++)
@@ -249,6 +250,28 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                                 break;
                         }
                     }
+                    if (cellName == "BarCard")
+                    {
+                        if (barcodelist.Count == 0)
+                        {
+                            barcodelist.Add(value);
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                int index = barcodelist.IndexOf(value);
+                                if (index == -1)
+                                {
+                                    barcodelist.Add(value);
+                                }
+                                else
+                                {
+                                    throw Oops.Oh(ErrorCodeEnum.D1009);
+                                }
+                            }
+                        }
+                    }
                     
                     ONEROW.Add(cellName, value);
                 }
@@ -287,7 +310,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
             {
                 int index = i;
                 File.Delete(filePath);
-                throw;
+                throw Oops.Oh(ErrorCodeEnum.D1009);
             }
             
         }
