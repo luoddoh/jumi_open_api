@@ -164,6 +164,7 @@ public class InspectionFlcProcureDetailInput : FlcProcureDetailBaseInput
 
     public decimal ok_totalAmount { get; set; }
 
+    public string? okCodeList { get; set; }
 }
 /// <summary>
 /// 采购明细主键查询输入参数

@@ -267,6 +267,7 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
                 PrintNum=x.PrintNum == null ? 0 : x.PrintNum,
                 BarCodeList=x.BarCodeList,
                 PrintCustom=x.flcGoodsSku.PrintCustom,
+                OkCodeList=x.OkCodeList,
             }).ToList();
         db.ThenMapper(list, pdetail =>
         {

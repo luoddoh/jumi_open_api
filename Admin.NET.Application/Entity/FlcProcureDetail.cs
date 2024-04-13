@@ -86,6 +86,11 @@ public class FlcProcureDetail  : EntityBaseData
     /// </summary>
     [SugarColumn(ColumnName = "BarCodeList", ColumnDescription = "条码列表",  Length = 2147483647)]
     public string? BarCodeList { get; set; }
+    /// <summary>
+    /// 已到条码列表
+    /// </summary>
+    [SugarColumn(ColumnName = "OkCodeList", ColumnDescription = "已到条码列表", Length = 2147483647)]
+    public string? OkCodeList { get; set; }
 
     [Navigate(NavigateType.OneToOne, nameof(SkuId))]//一对一 Sku导航
     public FlcGoodsSku flcGoodsSku { get; set; } //不能赋值只能是null

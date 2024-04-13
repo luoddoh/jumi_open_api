@@ -30,7 +30,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
         string barcode = "";
         if (!string.IsNullOrWhiteSpace(input.BarCode))
         {
-            if (barcode.Length > 7)
+            if (input.BarCode.Length > 7)
             {
                 barcode = input.BarCode.Substring(0, 7);
             }
