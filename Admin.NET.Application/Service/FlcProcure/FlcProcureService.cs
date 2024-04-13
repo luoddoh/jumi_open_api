@@ -39,7 +39,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
             .WhereIF(input.Purchaser>0, u => u.Purchaser == input.Purchaser)
             .WhereIF(!string.IsNullOrEmpty(input.Qtype), u => u.State != 100)
             .WhereIF((input.uid > 0&& input.uid!= 1300000000101&&input.uid!= 1300000000111&& (input.Isinventory==null|| input.Isinventory==false)), u => u.Purchaser == input.uid)
-            .WhereIF((input.Isinventory==true),u=>u.SupplierId==input.userSupplierId)
+            .WhereIF((input.Isinventory==true),u=>u.SupplierId==input.userSupplierId && u.State!=100)
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<FlcSupplierInfo>((u, supplierid) => u.SupplierId == supplierid.Id )
             .LeftJoin<SysUser>((u, supplierid, purchaser) => u.Purchaser == purchaser.Id )
@@ -119,7 +119,8 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 Purchaser = u.Purchaser,
                 PurchaserRealName = purchaser.RealName,
                 CreateTime = u.CreateTime,
-                CreateUserName = u.CreateUserName
+                CreateUserName = u.CreateUserName,
+                supplier= supplierid.SupName,
             });
         if (input.ProcurementTimeRange != null && input.ProcurementTimeRange.Count > 0)
         {
@@ -216,8 +217,9 @@ public class FlcProcureService : IDynamicApiController, ITransient
         var quer= _rep.AsQueryable()
             .LeftJoin<SysUser>((x,p)=>x.Purchaser==p.Id)
             .LeftJoin<SysUser>((x,p,r) => x.Reviewer == r.Id)
+            .LeftJoin<FlcSupplierInfo>((x, p, r, s) => x.SupplierId == s.Id)
             .Where(x=>x.Id==input.Id)
-            .Select((x,p,r)=>new
+            .Select((x,p,r,s)=>new
             {
                 docNumber=x.DocNumber,
                 state=x.State,
@@ -228,6 +230,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 reviewer=r.RealName,
                 auditTime=x.AuditTime,
                 remark=x.Remark,
+                supplier= s.SupName,
             })
             .FirstAsync();
         return await quer;

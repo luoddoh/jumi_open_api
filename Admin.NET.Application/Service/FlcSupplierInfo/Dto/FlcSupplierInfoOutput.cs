@@ -23,9 +23,11 @@ public class FlcSupplierInfoOutput
     /// <summary>
     /// 供应商分类 描述 
     /// </summary>
-    public string? CategoryIdCategoryName { get; set; } 
-    
-    }
+    public string? CategoryIdCategoryName { get; set; }
+
+    public string? code { get; set; }
+
+}
  
 
     // 使用实际实体flc_category_supplier,所以这里就删了

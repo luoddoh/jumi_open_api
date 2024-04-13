@@ -40,6 +40,7 @@ public class FlcSupplierInfoService : IDynamicApiController, ITransient
                 SupName = u.SupName,
                 CategoryId = u.CategoryId,  
                 CategoryIdCategoryName = categoryid.CategoryName,
+                code=u.code,
             });
         return await query.ToPagedListAsync(input.Page, input.PageSize);
     }

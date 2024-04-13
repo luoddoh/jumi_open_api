@@ -18,6 +18,7 @@ namespace Admin.NET.Application;
         /// </summary>
         public virtual long CategoryId { get; set; }
         
+    public string? code {  get; set; }
     }
 
     /// <summary>

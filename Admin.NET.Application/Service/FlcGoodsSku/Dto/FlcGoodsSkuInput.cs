@@ -61,7 +61,7 @@ namespace Admin.NET.Application;
         /// </summary>
         public string? BarCode { get; set; }
 
-       
+       public string? spevalue {  get; set; }
 }
 
 public class FlcGoodsSkuInputById

@@ -1,4 +1,6 @@
-﻿namespace Admin.NET.Application;
+﻿using Admin.NET.Core;
+
+namespace Admin.NET.Application;
 
 /// <summary>
 /// 库存查询输出参数
@@ -42,5 +44,12 @@ public class FlcInventoryOutput
     public List<labval> speValueList { get; set; }
 
 }
- 
+
+public class FlcInventoryOutputpage<TEntity> : SqlSugarPagedList<TEntity>
+{
+    public int TotalNumber { get; set; }
+    public decimal TotalAmount { get; set; }
+}
+
+
 

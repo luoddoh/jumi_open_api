@@ -3,6 +3,7 @@ using Admin.NET.Application.Const;
 using Admin.NET.Application.Entity;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using Admin.NET.Core;
 namespace Admin.NET.Application;
 /// <summary>
 /// 库存查询服务
@@ -60,7 +61,30 @@ public class FlcInventoryService : IDynamicApiController, ITransient
                 SpeValue = x.FlcSpecificationValue.SpeValue
             }).ToList();
         });
-        return query.ToPagedList(input.Page, input.PageSize);
+        if (!string.IsNullOrWhiteSpace(input.spevalue))
+        {
+            query = query.Where(u => u.speValueList.Find(x => x.SpeValue.Contains(input.spevalue)) != null).ToList();
+        }
+        int totlenum = 0;
+        decimal totleamont = 0;
+        foreach(var item in query)
+        {
+            totlenum+=item.Number;
+            totleamont += item.TotalAmount;
+        }
+        var a = query.ToPagedList(input.Page, input.PageSize);
+        FlcInventoryOutputpage<FlcInventoryOutput> result = new FlcInventoryOutputpage<FlcInventoryOutput>();
+        result.Page = a.Page;
+        result.PageSize = a.PageSize;
+        result.Items=a.Items;
+        result.Total = a.Total;
+        result.TotalPages = a.TotalPages;
+        result.HasPrevPage = a.HasPrevPage;
+        result.HasNextPage = a.HasNextPage;
+        result.TotalNumber=totlenum;
+        result.TotalAmount=totleamont;
+
+        return result;
     }
 
     /// <summary>

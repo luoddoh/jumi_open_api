@@ -20,5 +20,11 @@ public class FlcSupplierInfo  : EntityBaseData
     [Required]
     [SugarColumn(ColumnName = "CategoryId", ColumnDescription = "分类Id")]
     public long CategoryId { get; set; }
-    
+
+    /// <summary>
+    /// 供应商编码
+    /// </summary>
+    [Required]
+    [SugarColumn(ColumnName = "code", ColumnDescription = "供应商编码", Length = 100)]
+    public string? code { get; set; }
 }

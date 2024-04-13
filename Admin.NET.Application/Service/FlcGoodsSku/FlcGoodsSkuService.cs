@@ -27,6 +27,19 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "Page")]
     public async Task<SqlSugarPagedList<FlcGoodsSkuOutputs>> Page(FlcGoodsSkuInput input)
     {
+        string barcode = "";
+        if (!string.IsNullOrWhiteSpace(input.BarCode))
+        {
+            try
+            {
+                barcode = input.BarCode.Substring(0, 7);
+            }
+            catch (Exception )
+            {
+                throw Oops.Oh(ErrorCodeEnum.D1002);
+            }
+            
+        }
         var db = _rep.Context;
         var db_v = _rep_v.Context;
         var list = db.Queryable<FlcGoodsSku>()
@@ -35,7 +48,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
            .Where(x=>x.IsDelete==false&&x.flcGoods.IsDelete==false)
            .LeftJoin<FlcInventory>((x,p)=>x.Id==p.SkuId)
            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey),x=>x.flcGoods.GoodsName.Contains(input.SearchKey))
-           .WhereIF(!string.IsNullOrWhiteSpace(input.BarCode), x => x.BarCode==input.BarCode)
+           .WhereIF(!string.IsNullOrWhiteSpace(barcode), x => x.BarCode== barcode)
             .Where(x => x.IsDelete == false)
             .Select((x,p)=>new FlcGoodsSkuOutputs
             {
@@ -63,6 +76,10 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
                 SpeValue = x.FlcSpecificationValue.SpeValue
             }).ToList();
         });
+        if (!string.IsNullOrWhiteSpace(input.spevalue))
+        {
+            list = list.Where(u => u.speValueList.Find(x => x.SpeValue.Contains(input.spevalue)) != null).ToList();
+        }
         return list.ToPagedList(input.Page, input.PageSize);
     }
 

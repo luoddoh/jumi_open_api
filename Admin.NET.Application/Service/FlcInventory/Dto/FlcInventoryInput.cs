@@ -57,6 +57,8 @@ namespace Admin.NET.Application;
     /// 库存量大于
     /// </summary>
     public int? maxNumber { get; set; }
+
+    public string? spevalue { get; set; }
 }
 
     /// <summary>

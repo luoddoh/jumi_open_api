@@ -88,7 +88,10 @@ public class FlcProcureOutputMini
     /// </summary>
     public string DocNumber { get; set; }
 
- 
+    /// <summary>
+    /// 供应商
+    /// </summary>
+    public string supplier { get; set; }
 
     /// <summary>
     /// 状态
