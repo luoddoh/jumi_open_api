@@ -283,7 +283,8 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 .Select(u => new
                 {
                     Label = u.SupName,
-                    Value = u.Id
+                    Value = u.Id,
+                    code=u.code,
                 }
                 ).ToListAsync();
     }

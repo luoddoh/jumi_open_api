@@ -30,15 +30,15 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
         string barcode = "";
         if (!string.IsNullOrWhiteSpace(input.BarCode))
         {
-            try
+            if (barcode.Length > 7)
             {
                 barcode = input.BarCode.Substring(0, 7);
             }
-            catch (Exception )
+            else
             {
-                throw Oops.Oh(ErrorCodeEnum.D1002);
+                barcode = input.BarCode;
             }
-            
+
         }
         var db = _rep.Context;
         var db_v = _rep_v.Context;
