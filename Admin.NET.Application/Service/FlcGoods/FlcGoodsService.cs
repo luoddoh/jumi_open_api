@@ -204,106 +204,112 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         List<Dictionary<string, string>> listAll = new List<Dictionary<string, string>>();
         for (int i = 1;i <= sheet.LastRowNum; i++)
         {
+
             try
             {
                 Dictionary<string, string> ONEROW= new Dictionary<string, string>();
                 IRow row = sheet.GetRow(i);
-                ONEROW.Add("index",i.ToString());
-                foreach (string cellName in keyIndex.Keys)
+                if(row.Cells.Count > 5)
                 {
-                    ICell cell = row.Cells.FirstOrDefault(x => x.ColumnIndex == keyIndex[cellName]);
-                    string value = "";
-                    if (cell != null)
+                    ONEROW.Add("index", (i+1).ToString());
+                    foreach (string cellName in keyIndex.Keys)
                     {
-                        switch (cell.CellType)
+                        ICell cell = row.Cells.FirstOrDefault(x => x.ColumnIndex == keyIndex[cellName]);
+                        string value = "";
+                        if (cell != null)
                         {
-                            case CellType.String:
-                                value = cell.StringCellValue;
-                                break;
-                            case CellType.Numeric:
-                                if (DateUtil.IsCellDateFormatted(cell))
-                                {
-                                    value = cell.DateCellValue.Value.ToString("g");
-                                }
-                                else
-                                {
-                                    value = cell.NumericCellValue.ToString();
-                                }
-                                break;
-                            case CellType.Boolean:
-                                value = cell.BooleanCellValue.ToString();
-                                break;
-                            case CellType.Formula:
-                                try
-                                {
-                                    // 如果是公式，尝试计算得到值
-                                    value = cell.NumericCellValue.ToString();
-                                }
-                                catch
-                                {
-                                    // 如果公式计算错误，返回公式本身
-                                    value = cell.CellFormula;
-                                }
-                                break;
-                            default:
-                                value = cell.ToString();
-                                break;
-                        }
-                    }
-                    if (cellName == "BarCard")
-                    {
-                        if (barcodelist.Count == 0)
-                        {
-                            barcodelist.Add(value);
-                        }
-                        else
-                        {
-                            if (!string.IsNullOrEmpty(value))
+                            switch (cell.CellType)
                             {
-                                int index = barcodelist.IndexOf(value);
-                                if (index == -1)
+                                case CellType.String:
+                                    value = cell.StringCellValue;
+                                    break;
+                                case CellType.Numeric:
+                                    if (DateUtil.IsCellDateFormatted(cell))
+                                    {
+                                        value = cell.DateCellValue.Value.ToString("g");
+                                    }
+                                    else
+                                    {
+                                        value = cell.NumericCellValue.ToString();
+                                    }
+                                    break;
+                                case CellType.Boolean:
+                                    value = cell.BooleanCellValue.ToString();
+                                    break;
+                                case CellType.Formula:
+                                    try
+                                    {
+                                        // 如果是公式，尝试计算得到值
+                                        value = cell.NumericCellValue.ToString();
+                                    }
+                                    catch
+                                    {
+                                        // 如果公式计算错误，返回公式本身
+                                        value = cell.CellFormula;
+                                    }
+                                    break;
+                                default:
+                                    value = cell.ToString();
+                                    break;
+                            }
+                        }
+                        if (cellName == "BarCard")
+                        {
+                            if (barcodelist.Count == 0)
+                            {
+                                barcodelist.Add(value);
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(value))
                                 {
-                                    barcodelist.Add(value);
-                                }
-                                else
-                                {
-                                    throw Oops.Oh(ErrorCodeEnum.D1009);
+                                    int index = barcodelist.IndexOf(value);
+                                    if (index == -1)
+                                    {
+                                        barcodelist.Add(value);
+                                    }
+                                    else
+                                    {
+                                        throw Oops.Oh(ErrorCodeEnum.D1009);
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    ONEROW.Add(cellName, value);
-                }
-                listAll.Add(ONEROW);
-                string name = row.Cells.First(x => x.ColumnIndex == keyIndex["GoodsName"]).StringCellValue;
-                string sku = row.Cells.First(x => x.ColumnIndex == keyIndex["SkuCode"]).StringCellValue.Replace("欧琳-", "").Trim();
-                if (!string.IsNullOrEmpty(name))
-                {
-                    bool add_ok = true;
-                    int index = 0;
-                    for (int j = 0; j < spe.Count; j++)
-                    {
-                        if (spe[j].SpeName == name)
-                        {
-                            add_ok = false;
-                            index = j;
-                            break;
-                        }
-                    }
-                    if (add_ok)
-                    {
-                        spe.Add(new SpeListValue()
-                        {
-                            SpeName = name,
-                            Values = new List<string>() { sku }
-                        });
-                    }
-                    else
-                    {
-                        spe[index].Values.Add(sku);
-                    }
 
+                        ONEROW.Add(cellName, value);
+                    }
+                    listAll.Add(ONEROW);
+                    string name = row.Cells.First(x => x.ColumnIndex == keyIndex["GoodsName"]).StringCellValue;
+                    var textlist = row.Cells.First(x => x.ColumnIndex == keyIndex["SkuCode"]).StringCellValue.Split("-");
+                    string text_name = textlist[0];
+                    string sku = row.Cells.First(x => x.ColumnIndex == keyIndex["SkuCode"]).StringCellValue.Replace($"{text_name}-", "").Trim();
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        bool add_ok = true;
+                        int index = 0;
+                        for (int j = 0; j < spe.Count; j++)
+                        {
+                            if (spe[j].SpeName == name)
+                            {
+                                add_ok = false;
+                                index = j;
+                                break;
+                            }
+                        }
+                        if (add_ok)
+                        {
+                            spe.Add(new SpeListValue()
+                            {
+                                SpeName = name,
+                                Values = new List<string>() { sku }
+                            });
+                        }
+                        else
+                        {
+                            spe[index].Values.Add(sku);
+                        }
+
+                    }
                 }
             }
             catch (Exception )
