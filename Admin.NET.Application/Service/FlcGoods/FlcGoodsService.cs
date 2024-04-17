@@ -280,9 +280,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                     }
                     listAll.Add(ONEROW);
                     string name = row.Cells.First(x => x.ColumnIndex == keyIndex["GoodsName"]).StringCellValue;
-                    var textlist = row.Cells.First(x => x.ColumnIndex == keyIndex["SkuCode"]).StringCellValue.Split("-");
-                    string text_name = textlist[0];
-                    string sku = row.Cells.First(x => x.ColumnIndex == keyIndex["SkuCode"]).StringCellValue.Replace($"{text_name}-", "").Trim();
+                    string sku = row.Cells.First(x => x.ColumnIndex == keyIndex["SkuCode"]).StringCellValue;
                     if (!string.IsNullOrEmpty(name))
                     {
                         bool add_ok = true;
@@ -492,9 +490,11 @@ public class FlcGoodsService : IDynamicApiController, ITransient
     {
         var spev=_rep.Context.Queryable<FlcSpecificationValue>()
             .LeftJoin<FlcProductSpecifications>((v,s)=>v.SpecificationId==s.Id&&s.IsDelete==false)
-            .Where((v,s)=> s.SpeName == input.GoodsName&& input.SkuCode.Contains(v.SpeValue)).First();
+            .Where((v,s)=> s.SpeName == input.GoodsName&& input.SkuCode.Contains(v.SpeValue)&&v.SpeValue==input.SkuCode).First();
         var skuspe= _rep.Context.Queryable<FlcSkuSpeValue>()
-            .Where(x=>x.IsDelete==false&&x.SpeValueId == spev.Id ).First();
+            .LeftJoin<FlcGoodsSku>((x,k)=>x.SkuId==k.Id)
+            .LeftJoin<FlcGoods>((x,k,g)=>k.GoodsId==g.Id)
+            .Where((x, k, g) => x.IsDelete==false&&x.SpeValueId == spev.Id&&g.IsDelete==false ).First();
         if(skuspe == null)
         {
             FlcGoodsSku sku = new FlcGoodsSku()
