@@ -35,7 +35,7 @@ public class FlcInventoryCheckService : IDynamicApiController, ITransient
             .WhereIF(input.CheckPeople>0, u => u.CheckPeople == input.CheckPeople)
             .WhereIF(input.Reviewer>0, u => u.Reviewer == input.Reviewer)
             .WhereIF(!string.IsNullOrWhiteSpace(input.Remark), u => u.Remark.Contains(input.Remark.Trim()))
-             .WhereIF((input.uid > 0 && input.uid != 1300000000101 && input.uid != 1300000000111), u => u.CheckPeople == input.uid)
+             .WhereIF((input.uid > 0 && input.uid != 1300000000101 && input.uid != 1300000000111), u =>( u.CheckPeople == input.uid || u.CreateUserId == input.uid))
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, checkpeople) => u.CheckPeople == checkpeople.Id )
             .LeftJoin<SysUser>((u, checkpeople, reviewer) => u.Reviewer == reviewer.Id )
