@@ -4,6 +4,7 @@ using Admin.NET.Application.Entity;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using Admin.NET.Core;
+using Nest;
 namespace Admin.NET.Application;
 /// <summary>
 /// 库存查询服务
@@ -32,14 +33,17 @@ public class FlcInventoryService : IDynamicApiController, ITransient
             .LeftJoin<FlcGoodsSku>((u, skuid) => u.SkuId == skuid.Id )
             .LeftJoin<FlcGoods>((u, skuid,goods) => skuid.GoodsId==goods.Id)
             .LeftJoin<FlcGoodsUnit>((u, skuid, goods,unit) => skuid.UnitId == unit.Id)
-            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), (u, skuid, goods, unit) => goods.GoodsName.Contains(input.SearchKey.Trim()))
+            .LeftJoin<FlcSkuSpeValue>((u, skuid, goods, unit,line)=>skuid.Id==line.SkuId&&line.IsDelete==false)
+            .LeftJoin<FlcSpecificationValue>((u, skuid, goods, unit, line,value) => line.SpeValueId == value.Id && value.IsDelete == false)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), (u, skuid, goods, unit, line, value) => goods.GoodsName.Contains(input.SearchKey.Trim()))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.spevalue), (u, skuid, goods, unit, line, value) => value.SpeValue.Contains(input.spevalue.Trim()))
             .WhereIF(input.MinTotalAmount!=null,u=>u.TotalAmount<= input.MinTotalAmount)
             .WhereIF(input.MaxTotalAmount != null, u => u.TotalAmount >= input.MaxTotalAmount)
             .WhereIF(input.minNumber != null, u => u.Number <= input.minNumber)
             .WhereIF(input.maxNumber != null, u => u.Number >= input.maxNumber)
             .Where((u, skuid, goods)=>skuid.IsDelete==false&&goods.IsDelete==false)
             //.OrderBy(u => u.CreateTime)
-            .Select((u, skuid, goods, unit) => new FlcInventoryOutput
+            .Select((u, skuid, goods, unit, line, value) => new FlcInventoryOutput
             {
                 Id = u.Id,
                 SkuId = u.SkuId, 
@@ -48,23 +52,8 @@ public class FlcInventoryService : IDynamicApiController, ITransient
                 SkuIdBarCode = skuid.BarCode,
                 Number = u.Number,
                 TotalAmount = u.TotalAmount,
+                speValue= value.SpeValue
             }).ToList();
-        _rep.Context.ThenMapper(query, inventory =>
-        {
-            inventory.speValueList = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
-            .SetContext(x => x.SkuId, () => inventory.SkuId, inventory)
-            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), u => u.FlcSpecificationValue.SpeValue.Contains(input.SearchKey.Trim()))
-            .Select(x => new labval
-            {
-                Id = x.SpeValueId,
-                SpecificationId = x.FlcSpecificationValue.SpecificationId,
-                SpeValue = x.FlcSpecificationValue.SpeValue
-            }).ToList();
-        });
-        if (!string.IsNullOrWhiteSpace(input.spevalue))
-        {
-            query = query.Where(u => u.speValueList.Find(x => x.SpeValue.Contains(input.spevalue)) != null).ToList();
-        }
         int totlenum = 0;
         decimal totleamont = 0;
         foreach(var item in query)

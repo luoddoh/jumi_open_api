@@ -108,7 +108,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
             .LeftJoin<SysUser>((u, supplierid, purchaser) => u.Purchaser == purchaser.Id)
             .LeftJoin<SysUser>((u, supplierid, purchaser, reviewer) => u.Reviewer == reviewer.Id)
             .LeftJoin<SysOrg>((u, supplierid, purchaser, reviewer, org) => purchaser.OrgId == org.Id)
-            .OrderBy(u => u.CreateTime)
+            .OrderBy(u => u.CreateTime,OrderByType.Desc)
             .Select((u, supplierid, purchaser, reviewer, org) => new FlcProcureOutputMini
             {
                 Id = u.Id,
@@ -121,6 +121,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 CreateTime = u.CreateTime,
                 CreateUserName = u.CreateUserName,
                 supplier= supplierid.SupName,
+                Remark=u.Remark,
             });
         if (input.ProcurementTimeRange != null && input.ProcurementTimeRange.Count > 0)
         {

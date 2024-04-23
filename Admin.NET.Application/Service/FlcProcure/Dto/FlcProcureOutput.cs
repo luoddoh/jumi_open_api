@@ -131,7 +131,7 @@ public class FlcProcureOutputMini
     /// </summary>
     public string PurchaserRealName { get; set; }
 
-
+    public string? Remark { get; set; }
 }
 
 

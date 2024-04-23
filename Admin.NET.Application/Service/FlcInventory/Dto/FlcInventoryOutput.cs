@@ -41,8 +41,8 @@ public class FlcInventoryOutput
     /// </summary>
     public decimal TotalAmount { get; set; }
 
-    public List<labval> speValueList { get; set; }
 
+    public string speValue { get; set; }
 }
 
 public class FlcInventoryOutputpage<TEntity> : SqlSugarPagedList<TEntity>
