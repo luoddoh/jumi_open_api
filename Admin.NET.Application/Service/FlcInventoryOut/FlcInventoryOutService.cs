@@ -39,7 +39,7 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, reviewer) => u.Reviewer == reviewer.Id )
             .LeftJoin<SysUser>((u, reviewer, Operator) => u.Operator == Operator.Id)
-            .OrderBy(u => u.CreateTime)
+            .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .Select((u, reviewer, Operator) => new FlcInventoryOutOutput
             {
                 Id = u.Id,
@@ -75,6 +75,96 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
         } 
         return await query.ToPagedListAsync(input.Page, input.PageSize);
     }
+    /// <summary>
+    /// 导出详情查询数据
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    [ApiDescriptionSettings(Name = "DetailList")]
+    public async Task<SqlSugarPagedList<InventoryOutDetail>> DetailList(FlcInventoryOutInput input)
+    {
+        var query = _rep.AsQueryable()
+            .Where(u => u.IsDelete == false)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), u =>
+                u.DocNumber.Contains(input.SearchKey.Trim())
+                || u.Remark.Contains(input.SearchKey.Trim())
+            )
+            .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.OutType), u => u.OutType == input.OutType)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.Remark), u => u.Remark.Contains(input.Remark.Trim()))
+            .WhereIF(input.Reviewer > 0, u => u.Reviewer == input.Reviewer)
+             .WhereIF((input.Uid > 0 && input.Uid != 1300000000101 && input.Uid != 1300000000111), u => (u.Operator == input.Uid || u.CreateUserId == input.Uid))
+            .LeftJoin<FlcInventoryOutDetail>((u, d) => u.Id == d.OutId && d.IsDelete == false)
+            .LeftJoin<FlcGoodsSku>((u, d, s) => d.SkuId == s.Id && s.IsDelete == false)
+            .LeftJoin<FlcGoodsUnit>((u, d, s, t) => s.UnitId == t.Id && t.IsDelete == false)
+            .LeftJoin<FlcGoods>((u, d, s, t, g) => s.GoodsId == g.Id && g.IsDelete == false)
+            .LeftJoin<SysUser>((u, d, s, t, g,  purchaser) => u.Operator == purchaser.Id)
+            .LeftJoin<SysUser>((u, d, s, t, g,  purchaser, reviewer) => u.Reviewer == reviewer.Id)
+            .Select((u, d, s, t, g, purchaser, reviewer) => new InventoryOutDetail
+            {
+                DocNumber = u.DocNumber,
+                State = u.State,
+                ReviewerTime = u.ReviewerTime,
+                OutTime = u.OutTime,
+                Remark = u.Remark,
+                OperatorRealName = purchaser.RealName,
+                ReviewerRealName = reviewer.RealName,
+                SkuId = s.Id,
+                GoodsName = g.GoodsName,
+                UnitName = t.UnitName,
+                Price = d.Price,
+                OutNum = d.OutNum,
+                totalAmount =(decimal) d.TotalAmount,
+                DetailRemark = d.Remark
+            });
+        if (input.OutTimeRange != null && input.OutTimeRange.Count > 0)
+        {
+            DateTime? start = input.OutTimeRange[0];
+            query = query.WhereIF(start.HasValue, u => u.OutTime > start);
+            if (input.OutTimeRange.Count > 1 && input.OutTimeRange[1].HasValue)
+            {
+                var end = input.OutTimeRange[1].Value.AddDays(1);
+                query = query.Where(u => u.OutTime < end);
+            }
+        }
+        if (input.ReviewerTimeRange != null && input.ReviewerTimeRange.Count > 0)
+        {
+            DateTime? start = input.ReviewerTimeRange[0];
+            query = query.WhereIF(start.HasValue, u => u.ReviewerTime > start);
+            if (input.ReviewerTimeRange.Count > 1 && input.ReviewerTimeRange[1].HasValue)
+            {
+                var end = input.ReviewerTimeRange[1].Value.AddDays(1);
+                query = query.Where(u => u.ReviewerTime < end);
+            }
+        }
+        var list = query.ToList();
+        _rep.Context.ThenMapper(list, item =>
+        {
+            var info = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
+            .SetContext(x => x.SkuId, () => item.SkuId, item)
+            .Select(x => new labval
+            {
+                Id = x.SpeValueId,
+                SpecificationId = x.FlcSpecificationValue.SpecificationId,
+                SpeValue = x.FlcSpecificationValue.SpeValue
+            }).ToList();
+            string value = "";
+            foreach (var ele in info)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    value = ele.SpeValue;
+                }
+                else
+                {
+                    value += "/" + ele.SpeValue;
+                }
+            }
+            item.speValueList = value;
+        });
+        return list.ToPagedList(input.Page, input.PageSize);
+    }
 
     /// <summary>
     /// 小程序分页查询出库单
@@ -97,7 +187,7 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, reviewer) => u.Reviewer == reviewer.Id)
             .LeftJoin<SysUser>((u, reviewer, Operator) => u.Operator == Operator.Id)
-            .OrderBy(u => u.CreateTime)
+            .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .Select((u, reviewer, Operator) => new FlcInventoryOutOutput
             {
                 Id = u.Id,

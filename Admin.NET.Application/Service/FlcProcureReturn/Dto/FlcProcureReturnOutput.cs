@@ -75,5 +75,50 @@ public class FlcProcureReturnOutput
     public string? Remark { get; set; }
     
     }
- 
+public class ReturnDetail: FlcProcureReturnOutput
+{
+    /// <summary>
+    /// 商品sku
+    /// </summary>
+    public long SkuId { get; set; }
+    /// <summary>
+    /// 商品名称
+    /// </summary>
+    public string GoodsName { get; set; }
+    /// <summary>
+    /// 规格
+    /// </summary>
+    public string? speValueList { get; set; }
+    /// <summary>
+    /// 单位名称
+    /// </summary>
+    public string UnitName { get; set; }
+    /// <summary>
+    /// 退货价
+    /// </summary>
+    public decimal ReturnPrice { get; set; }
+
+    /// <summary>
+    /// 退货数量
+    /// </summary>
+    public int ReturnNum { get; set; }
+    /// <summary>
+    /// 总金额
+    /// </summary>
+    public decimal totalAmount { get; set; }
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? DetailRemark { get; set; }
+}
+
+public class excelOut: FlcGoodsSkuOutputs
+{
+    public int returnNum { get; set; }
+    public int totalAmount { get; set; }
+    public string remark { get; set; }
+    public decimal? returnPrice { get; set; }
+}
+
+
 

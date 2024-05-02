@@ -72,9 +72,49 @@ public class FlcProcureOutput
     /// <summary>
     /// 审核人 描述
     /// </summary>
-    public string ReviewerRealName { get; set; } 
-    
-    }
+    public string ReviewerRealName { get; set; }
+
+    /// <summary>
+    /// 供应商确认状态
+    /// </summary>
+    public bool? SupConfirm { get; set; }
+}
+
+public class ProcureDetail: FlcProcureOutput
+{
+    /// <summary>
+    /// 商品sku
+    /// </summary>
+    public long SkuId { get; set; }
+    /// <summary>
+    /// 商品名称
+    /// </summary>
+    public string GoodsName { get; set; }
+    /// <summary>
+    /// 规格
+    /// </summary>
+    public string? speValueList { get; set; }
+    /// <summary>
+    /// 单位名称
+    /// </summary>
+    public string UnitName { get; set; }
+    /// <summary>
+    /// 采购价
+    /// </summary>
+    public decimal purchasePrice { get; set; }
+    /// <summary>
+    /// 已到数量
+    /// </summary>
+    public int okNum { get; set; }
+    /// <summary>
+    /// 总金额
+    /// </summary>
+    public decimal totalAmount { get; set; }
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? DetailRemark { get; set; }
+}
 
 public class FlcProcureOutputMini
 {

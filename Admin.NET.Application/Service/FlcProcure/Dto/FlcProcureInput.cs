@@ -52,8 +52,12 @@ namespace Admin.NET.Application;
         /// 审核人
         /// </summary>
         public virtual long? Reviewer { get; set; }
-        
-    }
+
+        /// <summary>
+        /// 供应商确认状态
+        /// </summary>
+        public bool? SupConfirm { get; set; }
+}
 
     /// <summary>
     /// 采购订货列表分页查询输入参数

@@ -64,8 +64,12 @@ namespace Admin.NET.Application;
         /// 商品简介
         /// </summary>
         public string? Description { get; set; }
-        
-    }
+
+        /// <summary>
+        /// 商品简介
+        /// </summary>
+        public string? Sku { get; set; }
+}
 
     /// <summary>
     /// 商品信息增加输入参数

@@ -45,10 +45,10 @@ public class FlcInventoryOutput
     public string speValue { get; set; }
 }
 
-public class FlcInventoryOutputpage<TEntity> : SqlSugarPagedList<TEntity>
+public class FlcOutputpage<TEntity> : SqlSugarPagedList<TEntity>
 {
-    public int TotalNumber { get; set; }
-    public decimal TotalAmount { get; set; }
+    public int? TotalNumber { get; set; }
+    public decimal? TotalAmount { get; set; }
 }
 
 

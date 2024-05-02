@@ -62,7 +62,7 @@ public class FlcInventoryService : IDynamicApiController, ITransient
             totleamont += item.TotalAmount;
         }
         var a = query.ToPagedList(input.Page, input.PageSize);
-        FlcInventoryOutputpage<FlcInventoryOutput> result = new FlcInventoryOutputpage<FlcInventoryOutput>();
+        FlcOutputpage<FlcInventoryOutput> result = new FlcOutputpage<FlcInventoryOutput>();
         result.Page = a.Page;
         result.PageSize = a.PageSize;
         result.Items=a.Items;

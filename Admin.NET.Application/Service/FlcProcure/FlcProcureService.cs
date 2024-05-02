@@ -6,6 +6,7 @@ using AngleSharp.Dom;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Logical;
 using System.Collections.Generic;
 using NetTaste;
+using Nest;
 namespace Admin.NET.Application;
 /// <summary>
 /// 采购订货列表服务
@@ -28,6 +29,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "Page")]
     public async Task<SqlSugarPagedList<FlcProcureOutput>> Page(FlcProcureInput input)
     {
+       
         var query = _rep.AsQueryable()
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), u =>
                 u.DocNumber.Contains(input.SearchKey.Trim())
@@ -45,7 +47,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
             .LeftJoin<SysUser>((u, supplierid, purchaser) => u.Purchaser == purchaser.Id )
             .LeftJoin<SysUser>((u, supplierid, purchaser, reviewer) => u.Reviewer == reviewer.Id )
             .LeftJoin<SysOrg>((u, supplierid, purchaser, reviewer,org) => purchaser.OrgId == org.Id)
-            .OrderBy(u => u.CreateTime)
+            .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .Select((u, supplierid, purchaser, reviewer,org) => new FlcProcureOutput
             {
                 Id = u.Id,
@@ -62,6 +64,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 PurchaserRealName = purchaser.RealName,
                 Reviewer = u.Reviewer, 
                 ReviewerRealName = reviewer.RealName,
+                SupConfirm=u.SupConfirm
             });
         if(input.AuditTimeRange != null && input.AuditTimeRange.Count >0)
         {
@@ -82,9 +85,119 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 var end = input.ProcurementTimeRange[1].Value.AddDays(1);
                 query = query.Where(u => u.ProcurementTime < end);
             }
-        } 
-        return await query.ToPagedListAsync(input.Page, input.PageSize);
+        }
+        var list = query.ToList();
+        int totlenum = 0;
+        decimal totleamont = 0;
+        foreach (var item in list)
+        {
+
+            totleamont += (decimal)item.TotalAmount;
+        }
+        var a = query.ToPagedList(input.Page, input.PageSize);
+        FlcOutputpage<FlcProcureOutput> result = new FlcOutputpage<FlcProcureOutput>();
+        result.Page = a.Page;
+        result.PageSize = a.PageSize;
+        result.Items = a.Items;
+        result.Total = a.Total;
+        result.TotalPages = a.TotalPages;
+        result.HasPrevPage = a.HasPrevPage;
+        result.HasNextPage = a.HasNextPage;
+        result.TotalNumber = totlenum;
+        result.TotalAmount = totleamont;
+        return result;
     }
+    /// <summary>
+    /// 导出详情查询数据
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    [ApiDescriptionSettings(Name = "DetailList")]
+    public async Task<SqlSugarPagedList<ProcureDetail>> DetailList(FlcProcureInput input)
+    {
+        var query = _rep.AsQueryable()
+            .Where(u => u.IsDelete == false)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
+            .WhereIF(input.SupplierId > 0, u => u.SupplierId == input.SupplierId)
+            .WhereIF(input.State > 0, u => u.State == input.State)
+            .WhereIF(input.Purchaser > 0, u => u.Purchaser == input.Purchaser)
+            .WhereIF(!string.IsNullOrEmpty(input.Qtype), u => u.State != 100)
+            .WhereIF((input.uid > 0 && input.uid != 1300000000101 && input.uid != 1300000000111 && (input.Isinventory == null || input.Isinventory == false)), u => (u.Purchaser == input.uid || u.CreateUserId == input.uid))
+            .WhereIF((input.Isinventory == true), u => u.SupplierId == input.userSupplierId && u.State != 100)
+            .LeftJoin<FlcProcureDetail>((u, d) => u.Id == d.ProcureId && d.IsDelete == false)
+            .LeftJoin<FlcGoodsSku>((u, d, s) => d.SkuId == s.Id && s.IsDelete == false)
+            .LeftJoin<FlcGoodsUnit>((u, d, s, t) => s.UnitId == t.Id && t.IsDelete == false)
+            .LeftJoin<FlcGoods>((u, d, s, t, g) => s.GoodsId == g.Id && g.IsDelete == false)
+            .LeftJoin<FlcSupplierInfo>((u, d, s, t, g, i) => u.SupplierId == i.Id && i.IsDelete == false)
+            .LeftJoin<SysUser>((u, d, s, t, g, i, purchaser) => u.Purchaser == purchaser.Id)
+            .LeftJoin<SysUser>((u, d, s, t, g, i, purchaser, reviewer) => u.Reviewer == reviewer.Id)
+            .Select((u, d, s, t, g, i, purchaser, reviewer) => new ProcureDetail
+            {
+                DocNumber = u.DocNumber,
+                SupplierIdSupName = i.SupName,
+                State = u.State,
+                AuditTime = u.AuditTime,
+                ProcurementTime = u.ProcurementTime,
+                Remark = u.Remark,
+                PurchaserRealName = purchaser.RealName,
+                ReviewerRealName = reviewer.RealName,
+                SkuId = s.Id,
+                GoodsName = g.GoodsName,
+                UnitName = t.UnitName,
+                purchasePrice = d.purchasePrice,
+                okNum = d.okNum,
+                totalAmount = d.purchasePrice*d.okNum,
+                DetailRemark = d.remark
+            });
+        if (input.AuditTimeRange != null && input.AuditTimeRange.Count > 0)
+        {
+            DateTime? start = input.AuditTimeRange[0];
+            query = query.WhereIF(start.HasValue, u => u.AuditTime > start);
+            if (input.AuditTimeRange.Count > 1 && input.AuditTimeRange[1].HasValue)
+            {
+                var end = input.AuditTimeRange[1].Value.AddDays(1);
+                query = query.Where(u => u.AuditTime < end);
+            }
+        }
+        if (input.ProcurementTimeRange != null && input.ProcurementTimeRange.Count > 0)
+        {
+            DateTime? start = input.ProcurementTimeRange[0];
+            query = query.WhereIF(start.HasValue, u => u.ProcurementTime > start);
+            if (input.ProcurementTimeRange.Count > 1 && input.ProcurementTimeRange[1].HasValue)
+            {
+                var end = input.ProcurementTimeRange[1].Value.AddDays(1);
+                query = query.Where(u => u.ProcurementTime < end);
+            }
+        }
+        var list=query.ToList();
+        _rep.Context.ThenMapper(list, item =>
+        {
+            var info = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
+            .SetContext(x => x.SkuId, () => item.SkuId, item)
+            .Select(x => new labval
+            {
+                Id = x.SpeValueId,
+                SpecificationId = x.FlcSpecificationValue.SpecificationId,
+                SpeValue = x.FlcSpecificationValue.SpeValue
+            }).ToList();
+            string value = "";
+            foreach (var ele in info)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    value = ele.SpeValue;
+                }
+                else
+                {
+                    value += "/" + ele.SpeValue;
+                }
+            }
+            item.speValueList = value;
+        });
+        return list.ToPagedList(input.Page, input.PageSize);
+    }
+
     /// <summary>
     /// 小程序分页查询采购订货列表
     /// </summary>
@@ -94,6 +207,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "MiniPage")]
     public async Task<SqlSugarPagedList<FlcProcureOutputMini>> MiniPage(FlcProcureInput input)
     {
+
         var query = _rep.AsQueryable()
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), u =>
                 u.DocNumber.Contains(input.SearchKey.Trim())
@@ -151,7 +265,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
         });
         return list.ToPagedList(input.Page, input.PageSize);
     }
-
+    
     /// <summary>
     /// 增加采购订货列表
     /// </summary>
@@ -194,7 +308,18 @@ public class FlcProcureService : IDynamicApiController, ITransient
         var entity = input.Adapt<FlcProcure>();
         await _rep.AsUpdateable(entity).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommandAsync();
     }
-
+    /// <summary>
+    /// 更新采购订货列表(供应商确认)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    [ApiDescriptionSettings(Name = "UpdateSup")]
+    public async Task UpdateSup(UpdateFlcProcureInput input)
+    {
+        var entity = input.Adapt<FlcProcure>();
+        await _rep.AsUpdateable(entity).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommandAsync();
+    }
     /// <summary>
     /// 获取采购订货列表
     /// </summary>
@@ -271,7 +396,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
     {
         return await _rep.AsQueryable().Select<FlcProcureOutput>().ToListAsync();
     }
-
+    
     /// <summary>
     /// 获取供应商列表
     /// </summary>

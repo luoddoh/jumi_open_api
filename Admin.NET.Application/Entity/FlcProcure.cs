@@ -64,5 +64,11 @@ public class FlcProcure  : EntityBaseData
     /// </summary>
     [SugarColumn(ColumnName = "Reviewer", ColumnDescription = "审核人")]
     public long? Reviewer { get; set; }
-    
+
+    /// <summary>
+    /// 供应商确认状态
+    /// </summary>
+    [SugarColumn(ColumnName = "SupConfirm", ColumnDescription = "供应商确认状态")]
+    public bool? SupConfirm { get; set; }
+
 }

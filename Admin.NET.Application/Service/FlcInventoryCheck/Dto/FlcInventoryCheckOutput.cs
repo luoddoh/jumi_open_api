@@ -73,5 +73,40 @@ public class FlcInventoryCheckOutput
     /// </summary>
     public decimal? DifferencePrice { get; set; }
 }
- 
+public class InventoryCheckDetail : FlcInventoryCheckOutput
+{
+    /// <summary>
+    /// 商品sku
+    /// </summary>
+    public long SkuId { get; set; }
+    /// <summary>
+    /// 商品名称
+    /// </summary>
+    public string GoodsName { get; set; }
+    /// <summary>
+    /// 规格
+    /// </summary>
+    public string? speValueList { get; set; }
+    /// <summary>
+    /// 单位名称
+    /// </summary>
+    public string UnitName { get; set; }
+    /// <summary>
+    /// 成本价
+    /// </summary>
+    public decimal? Price { get; set; }
+
+    /// <summary>
+    /// 差异数量
+    /// </summary>
+    public int? DifferenceNum { get; set; }
+    /// <summary>
+    /// 差异金额
+    /// </summary>
+    public decimal DifferencePrice { get; set; }
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? DetailRemark { get; set; }
+}
 

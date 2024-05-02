@@ -70,5 +70,41 @@ public class FlcInventoryOutOutput
     /// </summary>
     public string? CreateUserName { get; set; }
 }
- 
+public class InventoryOutDetail : FlcInventoryOutOutput
+{
+    /// <summary>
+    /// 商品sku
+    /// </summary>
+    public long SkuId { get; set; }
+    /// <summary>
+    /// 商品名称
+    /// </summary>
+    public string GoodsName { get; set; }
+    /// <summary>
+    /// 规格
+    /// </summary>
+    public string? speValueList { get; set; }
+    /// <summary>
+    /// 单位名称
+    /// </summary>
+    public string UnitName { get; set; }
+    /// <summary>
+    /// 成本价
+    /// </summary>
+    public decimal? Price { get; set; }
+
+    /// <summary>
+    /// 出库数量
+    /// </summary>
+    public int? OutNum { get; set; }
+    /// <summary>
+    /// 总金额
+    /// </summary>
+    public decimal totalAmount { get; set; }
+    /// <summary>
+    /// 备注
+    /// </summary>
+    public string? DetailRemark { get; set; }
+}
+
 

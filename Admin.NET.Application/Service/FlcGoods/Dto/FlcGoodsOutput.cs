@@ -40,9 +40,17 @@ public class FlcGoodsOutput
     /// </summary>
     public string? Description { get; set; }
     
+    /// <summary>
+    /// sku列表
+    /// </summary>
+    public List<skulabel>? SkuList { get; set; }
     }
  
-
+    public class skulabel
+    {
+        public long GoodsId { get; set; }
+        public string label { get; set;}
+    }
     // 使用实际实体flc_category,所以这里就删了
     /*
     [SugarTable("flc_category")]

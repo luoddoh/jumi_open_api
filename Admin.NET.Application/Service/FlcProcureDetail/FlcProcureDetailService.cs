@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
+using NewLife.Data;
 namespace Admin.NET.Application;
 /// <summary>
 /// 采购明细服务
@@ -77,8 +78,10 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
                     int for_index = input.purchaseNum - barCodeList.Count;
                     for (int i = 0; i < for_index; i++)
                     {
+                        int number = 1000 + i;
                         var now = DateTime.Now;
-                        barCodeList.Add(row.flcGoodsSku.BarCode + now.Minute.ToString() + now.Second.ToString() + now.Millisecond.ToString() + new Random().Next(100, 999).ToString());
+                        //sku固定条码（7位）+分（2位）+秒（2位）+毫秒（1~3位）+随机数（3位）= 15-17位
+                        barCodeList.Add(row.flcGoodsSku.BarCode + now.Minute.ToString() + now.Second.ToString() + now.Millisecond.ToString() + number.ToString());
                         //barCodeList.Add(row.flcGoodsSku.BarCode + DateTimeOffset.Now.ToUnixTimeSeconds()+new Random().Next(100,999));
                     }
                 }
@@ -94,8 +97,9 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
                 string BarCode= _rep_sku.AsQueryable().Where(x=>x.Id==input.SkuId).First().BarCode;
                 for(int i = 0; i < input.purchaseNum; i++)
                 {
+                    int number= 1000+i;
                     var now = DateTime.Now;
-                    barCodeList.Add(BarCode + now.Minute.ToString() + now.Second.ToString() + now.Millisecond.ToString() + new Random().Next(100, 999).ToString());
+                    barCodeList.Add(BarCode + now.Minute.ToString() + now.Second.ToString() + now.Millisecond.ToString() + number.ToString());
                     //barCodeList.Add(BarCode + DateTimeOffset.Now.ToUnixTimeSeconds() + new Random().Next(100, 999));
                 }
                 var entity = input.Adapt<FlcProcureDetail>();

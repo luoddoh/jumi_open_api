@@ -11,6 +11,8 @@ using NPOI.XSSF.UserModel;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.WxaServiceMarketServiceGetServiceBuyerListResponse.Types.Buyer.Types;
 using Nest;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
+using static SKIT.FlurlHttpClient.Wechat.Api.Models.WxaBusinessPerformanceBootResponse.Types.Data.Types.Body.Types.Table.Types;
+using NetTaste;
 namespace Admin.NET.Application;
 /// <summary>
 /// 商品信息服务
@@ -57,7 +59,27 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                 CoverImage = u.CoverImage,
                 Description = u.Description,
             });
-        return await query.ToPagedListAsync(input.Page, input.PageSize);
+        List<FlcGoodsOutput> list = query.ToList();
+        _rep.Context.ThenMapper(list,item =>
+        {
+            item.SkuList= _rep.Context.Queryable<FlcGoodsSku>()
+            .LeftJoin<FlcSkuSpeValue>((u, line) => u.Id == line.SkuId && line.IsDelete == false)
+            .LeftJoin<FlcSpecificationValue>((u, line, value) => line.SpeValueId == value.Id && value.IsDelete == false)
+            .Where(u => u.IsDelete == false)
+            .OrderBy(u => u.CreateTime)
+            .Select((u, line, value) =>new skulabel
+            {
+                GoodsId=u.GoodsId,
+                label = value.SpeValue
+            })
+            .SetContext(u => u.GoodsId, () => item.Id, item)
+            .ToList();
+        });
+        if (!string.IsNullOrWhiteSpace(input.Sku))
+        {
+            list=list.Where(u=>u.SkuList.FindIndex(s =>s.label.Contains(input.Sku))!=-1).ToList();
+        }
+        return list.ToPagedList(input.Page, input.PageSize);
     }
 
     /// <summary>
