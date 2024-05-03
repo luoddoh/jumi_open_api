@@ -92,7 +92,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
         foreach (var item in list)
         {
 
-            totleamont += (decimal)item.TotalAmount;
+            totleamont += item.TotalAmount==null?0:(decimal)item.TotalAmount;
         }
         var a = query.ToPagedList(input.Page, input.PageSize);
         FlcOutputpage<FlcProcureOutput> result = new FlcOutputpage<FlcProcureOutput>();

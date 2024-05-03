@@ -242,7 +242,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
 
         Dictionary<string, string> headList = new Dictionary<string, string>()
         {
-              {"商品编号","SkuCode" },
+              {"SKU编码","SkuCode" },
               {"数量","Number" },
               {"备注","Remake" },
         };
