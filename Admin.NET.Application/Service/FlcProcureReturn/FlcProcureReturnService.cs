@@ -277,7 +277,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
                         switch (cell.CellType)
                         {
                             case CellType.String:
-                                value = cell.StringCellValue;
+                                value = cell.StringCellValue.Trim();
                                 break;
                             case CellType.Numeric:
                                 if (DateUtil.IsCellDateFormatted(cell))

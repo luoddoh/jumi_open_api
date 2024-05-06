@@ -116,7 +116,7 @@ public class excelOut: FlcGoodsSkuOutputs
 {
     public int returnNum { get; set; }
     public int totalAmount { get; set; }
-    public string remark { get; set; }
+    public string? remark { get; set; }
     public decimal? returnPrice { get; set; }
 }
 
