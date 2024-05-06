@@ -231,7 +231,12 @@ public class FlcGoodsService : IDynamicApiController, ITransient
             {
                 Dictionary<string, string> ONEROW= new Dictionary<string, string>();
                 IRow row = sheet.GetRow(i);
-                if(row.Cells.Count > 5)
+                if (row == null || row.Cells.All(cell => cell.CellType == CellType.Blank))
+                {
+                    // 空行
+                    continue;
+                }
+                if (row.Cells.Count > 5)
                 {
                     ONEROW.Add("index", (i+1).ToString());
                     foreach (string cellName in keyIndex.Keys)

@@ -78,7 +78,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
         foreach (var item in list)
         {
 
-            totleamont += (decimal)item.TotalAmount;
+            totleamont += item.TotalAmount == null ? 0 : (decimal)item.TotalAmount;
         }
         var a = query.ToPagedList(input.Page, input.PageSize);
         FlcOutputpage<FlcProcureReturnOutput> result = new FlcOutputpage<FlcProcureReturnOutput>();
@@ -268,51 +268,61 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
             {
                 Dictionary<string, string> ONEROW = new Dictionary<string, string>();
                 IRow row = sheet.GetRow(i);
-                foreach (string cellName in keyIndex.Keys)
+                if (row == null || row.Cells.All(cell => cell.CellType == CellType.Blank))
                 {
-                    ICell cell = row.Cells.FirstOrDefault(x => x.ColumnIndex == keyIndex[cellName]);
-                    string value = "";
-                    if (cell != null)
-                    {
-                        switch (cell.CellType)
-                        {
-                            case CellType.String:
-                                value = cell.StringCellValue.Trim();
-                                break;
-                            case CellType.Numeric:
-                                if (DateUtil.IsCellDateFormatted(cell))
-                                {
-                                    value = cell.DateCellValue.Value.ToString("g");
-                                }
-                                else
-                                {
-                                    value = cell.NumericCellValue.ToString();
-                                }
-                                break;
-                            case CellType.Boolean:
-                                value = cell.BooleanCellValue.ToString();
-                                break;
-                            case CellType.Formula:
-                                try
-                                {
-                                    // 如果是公式，尝试计算得到值
-                                    value = cell.NumericCellValue.ToString();
-                                }
-                                catch
-                                {
-                                    // 如果公式计算错误，返回公式本身
-                                    value = cell.CellFormula;
-                                }
-                                break;
-                            default:
-                                value = cell.ToString();
-                                break;
-                        }
-                    }
-
-                    ONEROW.Add(cellName, value);
+                    // 空行
+                    continue;
                 }
-                listAll.Add(ONEROW);
+
+                if (row.Cells.Count >= 2)
+                {
+                    foreach (string cellName in keyIndex.Keys)
+                    {
+                        ICell cell = row.Cells.FirstOrDefault(x => x.ColumnIndex == keyIndex[cellName]);
+                        string value = "";
+                        if (cell != null)
+                        {
+                            switch (cell.CellType)
+                            {
+                                case CellType.String:
+                                    value = cell.StringCellValue.Trim();
+                                    break;
+                                case CellType.Numeric:
+                                    if (DateUtil.IsCellDateFormatted(cell))
+                                    {
+                                        value = cell.DateCellValue.Value.ToString("g");
+                                    }
+                                    else
+                                    {
+                                        value = cell.NumericCellValue.ToString();
+                                    }
+                                    break;
+                                case CellType.Boolean:
+                                    value = cell.BooleanCellValue.ToString();
+                                    break;
+                                case CellType.Formula:
+                                    try
+                                    {
+                                        // 如果是公式，尝试计算得到值
+                                        value = cell.NumericCellValue.ToString();
+                                    }
+                                    catch
+                                    {
+                                        // 如果公式计算错误，返回公式本身
+                                        value = cell.CellFormula;
+                                    }
+                                    break;
+                                default:
+                                    value = cell.ToString();
+                                    break;
+                            }
+                        }
+
+                        ONEROW.Add(cellName, value);
+                    }
+                    listAll.Add(ONEROW);
+                }
+                    
             }
             catch (Exception)
             {
@@ -326,7 +336,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
         File.Delete(filePath);
         return Datainit(listAll);
     }
-    public List<excelOut> Datainit(List<Dictionary<string, string>> table)
+    public dynamic Datainit(List<Dictionary<string, string>> table)
     {
         var list = _rep.Context.Queryable<FlcGoodsSku>()
            .Includes(x => x.flcGoods)
@@ -349,7 +359,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
            .ToList();
         _rep.Context.ThenMapper(list, sku =>
         {
-            sku.speValueList = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
+            sku.speValueList = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue.Where(z=>z.IsDelete==false).ToList()).Where(x => x.IsDelete == false)
             .SetContext(x => x.SkuId, () => sku.Id, sku)
             .Select(x => new labval
             {
@@ -362,43 +372,68 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
         foreach (var item in table)
         {
             var sku = item["SkuCode"];
-            if (result.Count == 0)
+            try
             {
-                var obj=list.Where(u => u.speValueList.FindIndex(x => x.SpeValue == sku) != -1).First();
-                obj.returnNum =Convert.ToInt32(item["Number"]);
-                obj.remark = item["Remake"];
-                result.Add(obj);
-            }
-            else
-            {
-                bool add_ok = false;
-                int index = 0;
-                for (int i = 0; i < result.Count; i++)
+                if (result.Count == 0)
                 {
-                    var ele = result[i];
-                    if (ele.speValueList.FindIndex(x => x.SpeValue == sku) != -1)
+                    excelOut obj = new excelOut();
+                    try
                     {
-                        add_ok = true;
-                        index = i;
-                        break;
+                        obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue.Contains(sku)) != -1).First();
                     }
-                }
-                if(add_ok)
-                {
-                    result[index].returnNum += Convert.ToInt32(item["Number"]);
-                    if (!string.IsNullOrWhiteSpace(item["Remake"]))
+                    catch (Exception)
                     {
-                        result[index].remark += (","+ item["Remake"]);
+                        return "SKU编号(" + sku + ")不存在";
                     }
-                }
-                else
-                {
-                    var obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue == sku) != -1).First();
+
                     obj.returnNum = Convert.ToInt32(item["Number"]);
                     obj.remark = item["Remake"];
                     result.Add(obj);
                 }
+                else
+                {
+                    bool add_ok = false;
+                    int index = 0;
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        var ele = result[i];
+                        if (ele.speValueList.FindIndex(x => x.SpeValue == sku) != -1)
+                        {
+                            add_ok = true;
+                            index = i;
+                            break;
+                        }
+                    }
+                    if (add_ok)
+                    {
+                        result[index].returnNum += Convert.ToInt32(item["Number"]);
+                        if (!string.IsNullOrWhiteSpace(item["Remake"]))
+                        {
+                            result[index].remark += ("," + item["Remake"]);
+                        }
+                    }
+                    else
+                    {
+                        excelOut obj = new excelOut();
+                        try
+                        {
+                            obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue.Contains(sku)) != -1).First();
+                        }
+                        catch (Exception)
+                        {
+                            return "SKU编号(" + sku + ")不存在";
+                        }
+                        obj.returnNum = Convert.ToInt32(item["Number"]);
+                        obj.remark = item["Remake"];
+                        result.Add(obj);
+                    }
+                }
             }
+            catch (Exception)
+            {
+                return $"SKU编号:({sku}),数量：{item["Number"]},备注:{item["Remake"]}。出错！！";
+            }
+            
            
         }
         return result;
