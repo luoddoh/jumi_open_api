@@ -27,11 +27,12 @@ public class FlcSystemSwitchService : IDynamicApiController, ITransient
     /// <returns></returns>
     [HttpGet]
     [ApiDescriptionSettings(Name = "List")]
-    public async Task<List<SystemSwitchOut>> List()
+    public async Task<List<List<SystemSwitchOut>>> List()
     {
         var quer= await _rep.Context.Queryable<SysDictType>()
             .LeftJoin<SysDictData>((type,data)=>type.Id==data.DictTypeId&&data.IsDelete==false)
             .Where((type, data)=>type.IsDelete==false&&type.Code=="system_switch")
+            .OrderBy((type,data)=>data.OrderNo)
             .Select((type,data)=>new SystemSwitchOut
             {
                 switchId=data.Id,
@@ -55,7 +56,17 @@ public class FlcSystemSwitchService : IDynamicApiController, ITransient
 
             item.children = list;
         });
-        return quer;
+        List<List<SystemSwitchOut>> result = new List<List<SystemSwitchOut>>();
+        for(int i=0;i< quer.Count/4+(quer.Count%4>0?1:0); i++)
+        {
+            List < SystemSwitchOut > obj= new List<SystemSwitchOut >();
+            for (int j = 0; j <= 3&&((i*4+j)<quer.Count); j++)
+            {
+                obj.Add(quer[(i * 4 + j)]);
+            }
+            result.Add(obj);
+        }
+        return result;
     }
     /// <summary>
     /// 获取所有用户（除管理员）

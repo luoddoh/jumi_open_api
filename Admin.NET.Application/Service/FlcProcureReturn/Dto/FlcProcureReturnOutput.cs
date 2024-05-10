@@ -112,8 +112,46 @@ public class ReturnDetail: FlcProcureReturnOutput
     public string? DetailRemark { get; set; }
 }
 
-public class excelOut: FlcGoodsSkuOutputs
+public class excelOut
 {
+    /// <summary>
+    /// 商品Id
+    /// </summary>
+    public long GoodsId { get; set; }
+
+    public string GoodsName { get; set; }
+    public string UnitName { get; set; }
+
+    /// <summary>
+    /// 条码
+    /// </summary>
+    public string BarCode { get; set; }
+
+    /// <summary>
+    /// sku封面
+    /// </summary>
+    public string? CoverImage { get; set; }
+
+    /// <summary>
+    /// 库存数量
+    /// </summary>
+    public int InventoryNum { get; set; }
+    /// <summary>
+    /// 单位Id
+    /// </summary>
+    public long UnitId { get; set; }
+
+    public decimal? CostPrice { get; set; }
+
+    public decimal? SalesPrice { get; set; }
+
+    public string? PrintCustom { get; set; }
+
+    public List<labval> speValueList { get; set; }
+    /// <summary>
+    /// sku表id
+    /// </summary>
+    public long SkuId { get; set; }
     public int returnNum { get; set; }
     public int totalAmount { get; set; }
     public string? remark { get; set; }

@@ -245,6 +245,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
               {"SKU编码","SkuCode" },
               {"数量","Number" },
               {"备注","Remake" },
+              {"SKU条码","Code" },
         };
         Dictionary<string, int> keyIndex = new Dictionary<string, int>();
         foreach (var key in headList.Keys)
@@ -346,7 +347,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
             .Where(x => x.IsDelete == false)
             .Select((x, p) => new excelOut
             {
-                Id = x.Id,
+                SkuId=x.Id,
                 BarCode = x.BarCode,
                 returnPrice = x.CostPrice,
                 CoverImage = x.CoverImage,
@@ -360,7 +361,7 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
         _rep.Context.ThenMapper(list, sku =>
         {
             sku.speValueList = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue.Where(z=>z.IsDelete==false).ToList()).Where(x => x.IsDelete == false)
-            .SetContext(x => x.SkuId, () => sku.Id, sku)
+            .SetContext(x => x.SkuId, () => sku.SkuId, sku)
             .Select(x => new labval
             {
                 Id = x.SpeValueId,
@@ -372,66 +373,129 @@ public class FlcProcureReturnService : IDynamicApiController, ITransient
         foreach (var item in table)
         {
             var sku = item["SkuCode"];
+            var code = item["Code"];
             try
             {
-                if (result.Count == 0)
+                if (string.IsNullOrWhiteSpace(code))
                 {
-                    excelOut obj = new excelOut();
-                    try
-                    {
-                        obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue.Contains(sku)) != -1).First();
-                    }
-                    catch (Exception)
-                    {
-                        return "SKU编号(" + sku + ")不存在";
-                    }
-
-                    obj.returnNum = Convert.ToInt32(item["Number"]);
-                    obj.remark = item["Remake"];
-                    result.Add(obj);
-                }
-                else
-                {
-                    bool add_ok = false;
-                    int index = 0;
-                    for (int i = 0; i < result.Count; i++)
-                    {
-                        var ele = result[i];
-                        if (ele.speValueList.FindIndex(x => x.SpeValue == sku) != -1)
-                        {
-                            add_ok = true;
-                            index = i;
-                            break;
-                        }
-                    }
-                    if (add_ok)
-                    {
-                        result[index].returnNum += Convert.ToInt32(item["Number"]);
-                        if (!string.IsNullOrWhiteSpace(item["Remake"]))
-                        {
-                            result[index].remark += ("," + item["Remake"]);
-                        }
-                    }
-                    else
+                    if (result.Count == 0)
                     {
                         excelOut obj = new excelOut();
                         try
                         {
-                            obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue.Contains(sku)) != -1).First();
+                            obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue== sku) != -1).First();
                         }
                         catch (Exception)
                         {
                             return "SKU编号(" + sku + ")不存在";
                         }
+
                         obj.returnNum = Convert.ToInt32(item["Number"]);
                         obj.remark = item["Remake"];
                         result.Add(obj);
                     }
+                    else
+                    {
+                        bool add_ok = false;
+                        int index = 0;
+                        for (int i = 0; i < result.Count; i++)
+                        {
+                            var ele = result[i];
+                            if (ele.speValueList.FindIndex(x => x.SpeValue == sku) != -1)
+                            {
+                                add_ok = true;
+                                index = i;
+                                break;
+                            }
+                        }
+                        if (add_ok)
+                        {
+                            result[index].returnNum += Convert.ToInt32(item["Number"]);
+                            if (!string.IsNullOrWhiteSpace(item["Remake"]))
+                            {
+                                result[index].remark += ("," + item["Remake"]);
+                            }
+                        }
+                        else
+                        {
+                            excelOut obj = new excelOut();
+                            try
+                            {
+                                obj = list.Where(u => u.speValueList.FindIndex(x => x.SpeValue == sku) != -1).First();
+                            }
+                            catch (Exception)
+                            {
+                                return "SKU编号(" + sku + ")不存在";
+                            }
+                            obj.returnNum = Convert.ToInt32(item["Number"]);
+                            obj.remark = item["Remake"];
+                            result.Add(obj);
+                        }
+                    }
                 }
+                else
+                {
+                    var Nextcode = code.Substring(0, 7);
+                    if (result.Count == 0)
+                    {
+                        excelOut obj = new excelOut();
+                        try
+                        {
+                            obj = list.Where(u => u.BarCode== Nextcode).First();
+                        }
+                        catch (Exception)
+                        {
+                            return "SKU条码(" + Nextcode + ")不存在";
+                        }
+
+                        obj.returnNum = Convert.ToInt32(item["Number"]);
+                        obj.remark = item["Remake"];
+                        result.Add(obj);
+                    }
+                    else
+                    {
+                        bool add_ok = false;
+                        int index = 0;
+                        for (int i = 0; i < result.Count; i++)
+                        {
+                            var ele = result[i];
+                            if (ele.BarCode == Nextcode)
+                            {
+                                add_ok = true;
+                                index = i;
+                                break;
+                            }
+                        }
+                        if (add_ok)
+                        {
+                            result[index].returnNum += Convert.ToInt32(item["Number"]);
+                            if (!string.IsNullOrWhiteSpace(item["Remake"]))
+                            {
+                                result[index].remark += ("," + item["Remake"]);
+                            }
+                        }
+                        else
+                        {
+                            excelOut obj = new excelOut();
+                            try
+                            {
+                                obj = list.Where(u => u.BarCode == Nextcode).First();
+                            }
+                            catch (Exception)
+                            {
+                                return "SKU条码(" + Nextcode + ")不存在";
+                            }
+                            obj.returnNum = Convert.ToInt32(item["Number"]);
+                            obj.remark = item["Remake"];
+                            result.Add(obj);
+                        }
+                    }
+                }
+                    
             }
             catch (Exception)
             {
-                return $"SKU编号:({sku}),数量：{item["Number"]},备注:{item["Remake"]}。出错！！";
+                return $"SKU编号:({sku}),SKU条码:({code}),数量：{item["Number"]},备注:{item["Remake"]}。出错！！";
             }
             
            

@@ -307,7 +307,7 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
             var row = _rep.Context.Queryable<FlcInventory>()
                 .Where(x => x.SkuId == item.SkuId).First();
             row.Number = (int)(row.Number - item.OutNum);
-            row.TotalAmount = (int)(row.TotalAmount - item.TotalAmount)<0?0: (int)(row.TotalAmount - item.TotalAmount);
+            row.TotalAmount = (int)(row.TotalAmount - item.TotalAmount);
             await _rep.Context.Updateable(row).ExecuteCommandAsync();
         }
         var detail = _rep.AsQueryable().Where(x => x.Id == input.Id).First();
