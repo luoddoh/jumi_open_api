@@ -63,6 +63,51 @@ public class FlcInventoryOutDetailService : IDynamicApiController, ITransient
         }
     }
     /// <summary>
+    /// 更新出库明细
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    [HttpPost]
+    [ApiDescriptionSettings(Name = "Update_mini")]
+    public async Task Update_mini(List<FlcInventoryOutDetailOutput> inputList)
+    {
+        var oringList = _rep.AsQueryable().Where(x => x.IsDelete == false && x.OutId == inputList[0].OutId).ToList();
+        foreach (var oring in oringList)
+        {
+            bool del_ok = true;
+            foreach (var item in inputList)
+            {
+                if (item.SkuId == oring.SkuId)
+                {
+                    del_ok = false;
+                }
+            }
+            if (del_ok)
+            {
+                var del_entity = oring.Adapt<FlcInventoryOutDetail>();
+                await _rep.FakeDeleteAsync(del_entity);  //假删除
+            }
+        }
+        foreach (var input in inputList)
+        {
+            var row = _rep.AsQueryable()
+                .Where(x => x.IsDelete == false && x.OutId == input.OutId && x.SkuId == input.SkuId).First();
+            if (row != null)
+            {
+                var entity = input.Adapt<FlcInventoryOutDetail>();
+                entity.OutNum+=row.OutNum;
+                entity.TotalAmount += row.TotalAmount;
+                await _rep.AsUpdateable(entity).ExecuteCommandAsync();
+            }
+            else
+            {
+
+                var entity = input.Adapt<FlcInventoryOutDetail>();
+                await _rep.InsertAsync(entity);
+            }
+        }
+    }
+    /// <summary>
     /// 对应出库单明细
     /// </summary>
     /// <param name="input"></param>
