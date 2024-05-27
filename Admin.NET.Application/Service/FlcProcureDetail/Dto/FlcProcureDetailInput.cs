@@ -161,9 +161,9 @@ public class InspectionFlcProcureDetailInput : FlcProcureDetailBaseInput
     /// 到货数量
     /// </summary>
     public int OneOkNumber { get; set; }
-
+    
     public decimal ok_totalAmount { get; set; }
-
+    public string? oneCodeList { get; set; }
     public string? okCodeList { get; set; }
 }
 /// <summary>

@@ -149,6 +149,20 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
             {
                 input.okNum = input.OneOkNumber + input.okNum;
                 var entity = input.Adapt<FlcProcureDetail>();
+                if (!string.IsNullOrWhiteSpace(input.oneCodeList))
+                {
+                    if (string.IsNullOrWhiteSpace(entity.OkCodeList))
+                    {
+                        entity.OkCodeList = input.oneCodeList;
+                    }
+                    else
+                    {
+                        List<string> ok = JsonConvert.DeserializeObject<List<string>>(entity.OkCodeList);
+                        List<string> one = JsonConvert.DeserializeObject<List<string>>(input.oneCodeList);
+                        var list = ok.Concat(one);
+                        entity.OkCodeList = JsonConvert.SerializeObject(list);
+                    }
+                }
                 await _rep.AsUpdateable(entity).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommandAsync();
             }
             else
