@@ -263,9 +263,9 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
         var db_v = _rep_v.Context;
         var list= _rep.AsQueryable()
             .Includes(x=>x.flcGoods)
-            .Includes(x => x.flcGoodsSku,u=>u.flcGoodsUnit)
+            .Includes(x => x.flcGoodsSku.Where(u=>u.IsDelete==false).ToList(),u=>u.flcGoodsUnit)
             .LeftJoin<FlcInventory>((x,p)=>x.SkuId==p.SkuId)
-            .Where(x=>x.ProcureId==input.ProcureId)
+            .Where(x=>x.ProcureId==input.ProcureId&&x.IsDelete==false)
             .Select((x,p)=>new FlcProcureDetailOutput
             {
                 Id = x.Id,

@@ -6,6 +6,7 @@ using Admin.NET.Application.Service.FlcProcureReturnDetail.Dto;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.ScanProductAddV2Request.Types.Product.Types;
 using NPOI.SS.Formula.Functions;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 namespace Admin.NET.Application;
 /// <summary>
 /// 出库明细服务
@@ -118,6 +119,9 @@ public class FlcInventoryOutDetailService : IDynamicApiController, ITransient
             {
 
                 var entity = input.Adapt<FlcInventoryOutDetail>();
+                entity.OutNum = input.OneOutNum;
+                entity.TotalAmount = (input.OneOutNum * input.Price);
+                entity.OkCodeList = JsonConvert.SerializeObject(input.oneCodeList);
                 await _rep.InsertAsync(entity);
             }
         }

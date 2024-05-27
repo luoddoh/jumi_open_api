@@ -6,6 +6,7 @@ using Admin.NET.Application.Service.FlcProcureReturnDetail.Dto;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.ScanProductAddV2Request.Types.Product.Types;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 namespace Admin.NET.Application;
 /// <summary>
 /// 盘点明细服务
@@ -116,8 +117,10 @@ public class FlcInventoryCheckDetailService : IDynamicApiController, ITransient
             }
             else
             {
-
                 var entity = input.Adapt<FlcInventoryCheckDetail>();
+                entity.CheckNum = input.OneCheckNum;
+                entity.TotalAmount = (input.OneCheckNum * input.Price);
+                entity.OkCodeList = JsonConvert.SerializeObject(input.oneCodeList);
                 await _rep.InsertAsync(entity);
             }
         }
