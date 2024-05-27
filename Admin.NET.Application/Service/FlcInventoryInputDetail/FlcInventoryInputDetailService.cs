@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Admin.NET.Application.Service.FlcProcureReturnDetail.Dto;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.ScanProductAddV2Request.Types.Product.Types;
 using NPOI.SS.Formula.Functions;
+using Newtonsoft.Json;
 namespace Admin.NET.Application;
 /// <summary>
 /// 入库明细服务
@@ -98,8 +99,22 @@ public class FlcInventoryInputDetailService : IDynamicApiController, ITransient
             if (row != null)
             {
                 var entity = input.Adapt<FlcInventoryInputDetail>();
-                entity.InputNum += row.InputNum;
-                entity.TotalAmount += row.TotalAmount;
+                entity.InputNum += input.OneInputNum;
+                entity.TotalAmount += (input.OneInputNum* input.Price);
+                if (!string.IsNullOrWhiteSpace(input.oneCodeList))
+                {
+                    if (string.IsNullOrWhiteSpace(entity.OkCodeList))
+                    {
+                        entity.OkCodeList = input.oneCodeList;
+                    }
+                    else
+                    {
+                        List<string> ok = JsonConvert.DeserializeObject<List<string>>(entity.OkCodeList);
+                        List<string> one = JsonConvert.DeserializeObject<List<string>>(input.oneCodeList);
+                        var list = ok.Concat(one);
+                        entity.OkCodeList = JsonConvert.SerializeObject(list);
+                    }
+                }
                 await _rep.AsUpdateable(entity).ExecuteCommandAsync();
             }
             else
@@ -136,6 +151,7 @@ public class FlcInventoryInputDetailService : IDynamicApiController, ITransient
                 SkuImage = sku.CoverImage,
                 Price = x.Price,
                 InputNum = x.InputNum,
+                OkCodeList= x.OkCodeList,
                 TotalAmount = x.TotalAmount,
                 Remark = x.Remark,
             }).ToList();

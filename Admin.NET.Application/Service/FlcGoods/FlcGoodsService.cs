@@ -454,6 +454,9 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
         else
         {
+            row.Weight= input.Weight;
+            row.Producer= input.Producer;
+            _rep.Context.Updateable(row).ExecuteCommand();
             return row.Id;
         }
     }
@@ -517,11 +520,11 @@ public class FlcGoodsService : IDynamicApiController, ITransient
     {
         var spev=_rep.Context.Queryable<FlcSpecificationValue>()
             .LeftJoin<FlcProductSpecifications>((v,s)=>v.SpecificationId==s.Id&&s.IsDelete==false)
-            .Where((v,s)=> s.SpeName == input.GoodsName&& input.SkuCode.Contains(v.SpeValue)&&v.SpeValue==input.SkuCode).First();
+            .Where((v,s)=> s.SpeName == input.GoodsName&& v.SpeValue==input.SkuCode).First();
         var skuspe= _rep.Context.Queryable<FlcSkuSpeValue>()
             .LeftJoin<FlcGoodsSku>((x,k)=>x.SkuId==k.Id)
             .LeftJoin<FlcGoods>((x,k,g)=>k.GoodsId==g.Id)
-            .Where((x, k, g) => x.IsDelete==false&&x.SpeValueId == spev.Id&&g.IsDelete==false ).First();
+            .Where((x, k, g) => x.IsDelete==false && k.IsDelete == false && x.SpeValueId == spev.Id&&g.IsDelete==false ).First();
         if(skuspe == null)
         {
             FlcGoodsSku sku = new FlcGoodsSku()
@@ -544,7 +547,17 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
         else
         {
-            return (long)skuspe.SkuId;
+            var sku_row= _rep.Context.Queryable<FlcGoodsSku>()
+            .LeftJoin<FlcSkuSpeValue>((x, k) => k.SkuId == x.Id)
+            .LeftJoin<FlcGoods>((x, k, g) => x.GoodsId == g.Id)
+            .Where((x, k, g) => x.IsDelete == false&&k.IsDelete==false && k.SpeValueId == spev.Id && g.IsDelete == false).First();
+            sku_row.UnitId = UnitId;
+            sku_row.CostPrice = string.IsNullOrEmpty(input.costPrice) ? null : Convert.ToDecimal(input.costPrice);
+            sku_row.SalesPrice = string.IsNullOrEmpty(input.RetailPrice) ? null : Convert.ToDecimal(input.RetailPrice);
+            sku_row.PrintCustom = input.PrintCustom;
+            sku_row.BarCode = input.BarCard;
+            _rep.Context.Updateable(sku_row).ExecuteCommand();
+            return sku_row.Id;
         }
        
     }

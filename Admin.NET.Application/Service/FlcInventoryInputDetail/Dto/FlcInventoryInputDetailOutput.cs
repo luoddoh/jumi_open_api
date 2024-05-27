@@ -34,10 +34,21 @@ public class FlcInventoryInputDetailOutput
     public decimal? Price { get; set; }
 
     /// <summary>
-    /// 出库数量
+    /// 入库数
     /// </summary>
     public int? InputNum { get; set; }
-
+    /// <summary>
+    /// 当次入库数
+    /// </summary>
+    public int OneInputNum { get; set; }
+    /// <summary>
+    /// 本次扫码条码
+    /// </summary>
+    public string? oneCodeList { get; set; }
+    /// <summary>
+    /// 已扫条码
+    /// </summary>
+    public string? OkCodeList { get; set; }
     /// <summary>
     /// 总金额
     /// </summary>

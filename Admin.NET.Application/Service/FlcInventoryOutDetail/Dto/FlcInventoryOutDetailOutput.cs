@@ -39,6 +39,14 @@ public class FlcInventoryOutDetailOutput
     public int? OutNum { get; set; }
 
     /// <summary>
+    /// 本次扫码条码
+    /// </summary>
+    public string? oneCodeList { get; set; }
+    /// <summary>
+    /// 已扫条码
+    /// </summary>
+    public string? OkCodeList { get; set; }
+    /// <summary>
     /// 总金额
     /// </summary>
     public decimal? TotalAmount { get; set; }
@@ -47,7 +55,7 @@ public class FlcInventoryOutDetailOutput
     /// 备注
     /// </summary>
     public string? Remark { get; set; }
-
+    public int OneOutNum { get; set; }
     /// <summary>
     /// sku图片
     /// </summary>

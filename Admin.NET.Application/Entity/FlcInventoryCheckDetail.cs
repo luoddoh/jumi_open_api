@@ -34,7 +34,7 @@ public class FlcInventoryCheckDetail  : EntityBaseData
     [Required]
     [SugarColumn(ColumnName = "CheckNum", ColumnDescription = "盘点数量")]
     public int CheckNum { get; set; }
-    
+
     /// <summary>
     /// 总金额
     /// </summary>
@@ -68,5 +68,10 @@ public class FlcInventoryCheckDetail  : EntityBaseData
     [Required]
     [SugarColumn(ColumnName = "Price", ColumnDescription = "成本价", Length = 18, DecimalDigits=2 )]
     public decimal Price { get; set; }
-    
+
+    /// <summary>
+    /// 已扫条码
+    /// </summary>
+    [SugarColumn(ColumnName = "OkCodeList", ColumnDescription = "已扫条码", Length = 2147483647)]
+    public string? OkCodeList { get; set; }
 }

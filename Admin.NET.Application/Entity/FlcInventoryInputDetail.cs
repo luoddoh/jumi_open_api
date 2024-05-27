@@ -50,5 +50,10 @@ public class FlcInventoryInputDetail  : EntityBaseData
     /// </summary>
     [SugarColumn(ColumnName = "Remark", ColumnDescription = "备注", Length = 200)]
     public string? Remark { get; set; }
-    
+
+    /// <summary>
+    /// 已扫条码
+    /// </summary>
+    [SugarColumn(ColumnName = "OkCodeList", ColumnDescription = "已扫条码", Length = 2147483647)]
+    public string? OkCodeList { get; set; }
 }

@@ -31,13 +31,20 @@ public class FlcInventoryCheckDetailOutput
     /// <summary>
     /// 成本价
     /// </summary>
-    public decimal? Price { get; set; }
+    public decimal Price { get; set; }
 
     /// <summary>
     /// 盘点数量
     /// </summary>
     public int? CheckNum { get; set; }
-
+    /// <summary>
+    /// 本次扫码条码
+    /// </summary>
+    public string? oneCodeList { get; set; }
+    /// <summary>
+    /// 已扫条码
+    /// </summary>
+    public string? OkCodeList { get; set; }
     /// <summary>
     /// 总金额
     /// </summary>
@@ -60,6 +67,8 @@ public class FlcInventoryCheckDetailOutput
     /// sku图片
     /// </summary>
     public string SkuImage { get; set; }
+
+    public int OneCheckNum { get; set; }
 
     public List<labval> speValueList { get; set;}
 }

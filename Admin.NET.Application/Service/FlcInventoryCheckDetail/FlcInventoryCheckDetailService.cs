@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Admin.NET.Application.Service.FlcProcureReturnDetail.Dto;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.ScanProductAddV2Request.Types.Product.Types;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
+using Newtonsoft.Json;
 namespace Admin.NET.Application;
 /// <summary>
 /// 盘点明细服务
@@ -95,8 +96,22 @@ public class FlcInventoryCheckDetailService : IDynamicApiController, ITransient
             if (row != null)
             {
                 var entity = input.Adapt<FlcInventoryCheckDetail>();
-                entity.CheckNum += row.CheckNum;
-                entity.TotalAmount += row.TotalAmount;
+                entity.CheckNum += input.OneCheckNum;
+                entity.TotalAmount += (input.OneCheckNum*input.Price);
+                if (!string.IsNullOrWhiteSpace(input.oneCodeList))
+                {
+                    if (string.IsNullOrWhiteSpace(entity.OkCodeList))
+                    {
+                        entity.OkCodeList = input.oneCodeList;
+                    }
+                    else
+                    {
+                        List<string> ok = JsonConvert.DeserializeObject<List<string>>(entity.OkCodeList);
+                        List<string> one = JsonConvert.DeserializeObject<List<string>>(input.oneCodeList);
+                        var list = ok.Concat(one);
+                        entity.OkCodeList = JsonConvert.SerializeObject(list);
+                    }
+                }
                 await _rep.AsUpdateable(entity).ExecuteCommandAsync();
             }
             else
@@ -133,10 +148,11 @@ public class FlcInventoryCheckDetailService : IDynamicApiController, ITransient
                 SkuImage=sku.CoverImage,
                 Price=x.Price,
                 CheckNum = x.CheckNum,
+                OkCodeList=x.OkCodeList,
                 TotalAmount=x.TotalAmount,
                 DifferenceNum=x.DifferenceNum,
                 DifferencePrice=x.DifferencePrice,
-                Remark=x.Remark,
+                Remark =x.Remark,
             }).ToList();
         _rep.Context.ThenMapper(list, pdetail =>
         {
