@@ -123,7 +123,7 @@ public class FlcInventoryInputDetailService : IDynamicApiController, ITransient
                 var entity = input.Adapt<FlcInventoryInputDetail>();
                 entity.InputNum = input.OneInputNum;
                 entity.TotalAmount = (input.OneInputNum * input.Price);
-                entity.OkCodeList = JsonConvert.SerializeObject(input.oneCodeList);
+                entity.OkCodeList = input.oneCodeList;
                 await _rep.InsertAsync(entity);
             }
         }

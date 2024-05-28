@@ -120,7 +120,7 @@ public class FlcInventoryCheckDetailService : IDynamicApiController, ITransient
                 var entity = input.Adapt<FlcInventoryCheckDetail>();
                 entity.CheckNum = input.OneCheckNum;
                 entity.TotalAmount = (input.OneCheckNum * input.Price);
-                entity.OkCodeList = JsonConvert.SerializeObject(input.oneCodeList);
+                entity.OkCodeList = input.oneCodeList;
                 await _rep.InsertAsync(entity);
             }
         }
