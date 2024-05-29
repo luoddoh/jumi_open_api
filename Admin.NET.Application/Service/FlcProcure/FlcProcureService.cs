@@ -61,6 +61,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 TotalAmount = u.TotalAmount,
                 Purchaser = u.Purchaser, 
                 department= org.Name,
+                CreateUserName = u.CreateUserName,
                 PurchaserRealName = purchaser.RealName,
                 Reviewer = u.Reviewer, 
                 ReviewerRealName = reviewer.RealName,

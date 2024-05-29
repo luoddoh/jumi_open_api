@@ -69,6 +69,7 @@ public class FlcProcureReturnOutput
     /// </summary>
     public decimal? TotalAmount { get; set; }
     
+    public string CreateUserName { get; set; }
     /// <summary>
     /// 备注
     /// </summary>

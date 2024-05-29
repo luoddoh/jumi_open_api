@@ -73,7 +73,10 @@ public class FlcProcureOutput
     /// 审核人 描述
     /// </summary>
     public string ReviewerRealName { get; set; }
-
+    /// <summary>
+    /// 创建人描述
+    /// </summary>
+    public string CreateUserName { get; set; }
     /// <summary>
     /// 供应商确认状态
     /// </summary>
