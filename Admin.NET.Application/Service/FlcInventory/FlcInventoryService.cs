@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using Admin.NET.Core;
 using Nest;
+using System.Linq;
 namespace Admin.NET.Application;
 /// <summary>
 /// 库存查询服务
@@ -38,6 +39,7 @@ public class FlcInventoryService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), (u, skuid, goods, unit, line, value) => goods.GoodsName.Contains(input.SearchKey.Trim()))
             .WhereIF(!string.IsNullOrWhiteSpace(input.spevalue), (u, skuid, goods, unit, line, value) => value.SpeValue.Contains(input.spevalue.Trim()))
             .WhereIF(input.MinTotalAmount!=null,u=>u.TotalAmount<= input.MinTotalAmount)
+            .WhereIF(input.categoryId!=null, (u, skuid, goods)=>input.categoryId.Contains(goods.CategoryId))
             .WhereIF(input.MaxTotalAmount != null, u => u.TotalAmount >= input.MaxTotalAmount)
             .WhereIF(input.minNumber != null, u => u.Number <= input.minNumber)
             .WhereIF(input.maxNumber != null, u => u.Number >= input.maxNumber)

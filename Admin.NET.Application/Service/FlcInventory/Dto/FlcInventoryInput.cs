@@ -59,6 +59,7 @@ namespace Admin.NET.Application;
     public int? maxNumber { get; set; }
 
     public string? spevalue { get; set; }
+    public List<long>? categoryId { get; set; }
 }
 
     /// <summary>
