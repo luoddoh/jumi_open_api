@@ -213,7 +213,7 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
             .LeftJoin<FlcGoods>((k, g) => k.GoodsId == g.Id)
             .LeftJoin<FlcGoodsUnit>((k, g, t) => k.UnitId == t.Id)
             .LeftJoin<FlcInventory>((k, g, t, i) => k.Id == i.SkuId)
-            .Where((k, g, t, i) => k.BarCode == code && k.IsDelete == false)
+            .Where((k, g, t, i) => k.BarCode == code && k.IsDelete == false&&g.IsDelete==false)
             .Select((k, g, t, i) => new FlcskuDetailOutput
             {
                 Id = k.Id,

@@ -139,7 +139,7 @@ public class FlcInventoryOutDetailService : IDynamicApiController, ITransient
             .LeftJoin<FlcGoodsSku>((x, sku)=>x.SkuId==sku.Id)
             .LeftJoin<FlcGoods>((x, sku, good) => sku.GoodsId==good.Id)
             .LeftJoin<FlcGoodsUnit>((x, sku, good,unit) => sku.UnitId == unit.Id)
-             .LeftJoin<FlcInventory>((x, sku, good, unit, inv) => x.SkuId == inv.SkuId)
+            .LeftJoin<FlcInventory>((x, sku, good, unit, inv) => x.SkuId == inv.SkuId)
             .Where(x=>x.OutId==input.OutId&&x.IsDelete==false)
             .Select((x, sku, good, unit, inv) =>new FlcInventoryOutDetailOutput()
             {

@@ -113,6 +113,8 @@ public class FlcInventoryCheckService : IDynamicApiController, ITransient
                 CheckPeopleRealName = purchaser.RealName,
                 ReviewerRealName = reviewer.RealName,
                 SkuId = s.Id,
+                CheckNum=d.CheckNum,
+                TotalAmount=d.TotalAmount,
                 GoodsName = g.GoodsName,
                 UnitName = t.UnitName,
                 Price = d.Price,

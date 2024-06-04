@@ -95,7 +95,10 @@ public class InventoryCheckDetail : FlcInventoryCheckOutput
     /// 成本价
     /// </summary>
     public decimal? Price { get; set; }
-
+    /// <summary>
+    /// 盘点数量
+    /// </summary>
+    public int? CheckNum { get; set; }
     /// <summary>
     /// 差异数量
     /// </summary>
@@ -104,6 +107,10 @@ public class InventoryCheckDetail : FlcInventoryCheckOutput
     /// 差异金额
     /// </summary>
     public decimal DifferencePrice { get; set; }
+    /// <summary>
+    /// 总金额
+    /// </summary>
+    public decimal TotalAmount { get; set; }
     /// <summary>
     /// 备注
     /// </summary>

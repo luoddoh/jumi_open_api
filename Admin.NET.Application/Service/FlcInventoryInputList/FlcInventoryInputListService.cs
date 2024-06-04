@@ -30,6 +30,7 @@ public class FlcInventoryInputListService : IDynamicApiController, ITransient
                 || u.InputType.Contains(input.SearchKey.Trim())
                 || u.Remark.Contains(input.SearchKey.Trim())
             )
+            .Where(u=>u.IsDelete==false)
             .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
             .WhereIF(!string.IsNullOrWhiteSpace(input.InputType), u => u.InputType.Contains(input.InputType.Trim()))
             .WhereIF(!string.IsNullOrWhiteSpace(input.Remark), u => u.Remark.Contains(input.Remark.Trim()))
@@ -37,7 +38,7 @@ public class FlcInventoryInputListService : IDynamicApiController, ITransient
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, operato) => u.Operator == operato.Id )
             .LeftJoin<SysUser>((u, operato, reviewer) => u.Reviewer == reviewer.Id )
-            .OrderBy(u => u.CreateTime)
+            .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .Select((u, operato, reviewer) => new FlcInventoryInputListOutput
             {
                 Id = u.Id,
@@ -80,6 +81,7 @@ public class FlcInventoryInputListService : IDynamicApiController, ITransient
                 || u.InputType.Contains(input.SearchKey.Trim())
                 || u.Remark.Contains(input.SearchKey.Trim())
             )
+            .Where(u => u.IsDelete == false)
             .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
             .WhereIF(!string.IsNullOrWhiteSpace(input.InputType), u => u.InputType.Contains(input.InputType.Trim()))
             .WhereIF(!string.IsNullOrWhiteSpace(input.Remark), u => u.Remark.Contains(input.Remark.Trim()))
@@ -88,7 +90,7 @@ public class FlcInventoryInputListService : IDynamicApiController, ITransient
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, operato) => u.Operator == operato.Id)
             .LeftJoin<SysUser>((u, operato, reviewer) => u.Reviewer == reviewer.Id)
-            .OrderBy(u => u.CreateTime)
+            .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .Select((u, operato, reviewer) => new FlcInventoryInputListOutput
             {
                 Id = u.Id,
