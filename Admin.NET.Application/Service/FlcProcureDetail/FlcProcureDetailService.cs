@@ -53,7 +53,7 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
             if (del_ok)
             {
                 var del_entity = oring.Adapt<FlcProcureDetail>();
-                await _rep.FakeDeleteAsync(del_entity);  //假删除
+                await _rep.DeleteAsync(del_entity);  //假删除
             }
         }
         foreach (var input in inputList)
@@ -192,13 +192,16 @@ public class FlcProcureDetailService : IDynamicApiController, ITransient
             
         }
         var procure = _rep.Context.Queryable<FlcProcure>().Where(x => x.Id == inputList[0].ProcureId).First();
-        var on_detail = _rep.Context.Queryable<FlcProcureDetail>().Where(x => x.ProcureId == inputList[0].ProcureId).ToList();
+        var on_detail = _rep.Context.Queryable<FlcProcureDetail>()
+            .Where(x=>x.IsDelete == false)
+            .Where(x => x.ProcureId == inputList[0].ProcureId).ToList();
         procure.State = 400;
         foreach(var item in on_detail)
         {
             if (item.okNum < item.purchaseNum)
             {
                 procure.State = 300;
+                break;
             }
         }
         await _rep.Context.Updateable(procure).ExecuteCommandAsync();
