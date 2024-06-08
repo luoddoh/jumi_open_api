@@ -379,10 +379,10 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         var frist_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.oneClass && x.IsDelete == false).First();
         if (frist_class != null)
         {
-            var two_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.TwoClass && x.IsDelete == false).First();
+            var two_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.TwoClass && x.IsDelete == false&&x.SuperiorId==frist_class.Id).First();
             if (two_class != null)
             {
-                var three_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.ThreeClass && x.IsDelete == false).First();
+                var three_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.ThreeClass && x.IsDelete == false && x.SuperiorId == two_class.Id).First();
                 if (three_class == null)
                 {
                     FlcCategory obj= new FlcCategory()
@@ -455,6 +455,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         else
         {
             row.Weight= input.Weight;
+            row.CategoryId= CategoryId;
             row.Producer= input.Producer;
             _rep.Context.Updateable(row).ExecuteCommand();
             return row.Id;
