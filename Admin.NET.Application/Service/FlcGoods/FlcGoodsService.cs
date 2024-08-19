@@ -282,13 +282,13 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                         }
                         if (cellName == "BarCard")
                         {
-                            if (barcodelist.Count == 0)
+                            if (!string.IsNullOrEmpty(value))
                             {
-                                barcodelist.Add(value);
-                            }
-                            else
-                            {
-                                if (!string.IsNullOrEmpty(value))
+                                if (barcodelist.Count == 0)
+                                {
+                                    barcodelist.Add(value);
+                                }
+                                else
                                 {
                                     int index = barcodelist.IndexOf(value);
                                     if (index == -1)
@@ -298,12 +298,12 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                                     else
                                     {
                                         throw Oops.Oh(ErrorCodeEnum.D1009);
-                                    }
+                                    }                       
                                 }
-                                else
-                                {
-                                    throw Oops.Oh(ErrorCodeEnum.xg1002);
-                                }
+                            }
+                            else
+                            {
+                                throw Oops.Oh(ErrorCodeEnum.xg1002);
                             }
                         }
 
@@ -341,11 +341,11 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                     }
                 }
             }
-            catch (Exception )
+            catch (Exception e)
             {
                 int index = i;
                 File.Delete(filePath);
-                throw Oops.Oh(ErrorCodeEnum.D1009);
+                throw e;
             }
             
         }
