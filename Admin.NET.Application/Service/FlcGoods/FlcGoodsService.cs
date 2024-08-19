@@ -300,6 +300,10 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                                         throw Oops.Oh(ErrorCodeEnum.D1009);
                                     }
                                 }
+                                else
+                                {
+                                    throw Oops.Oh(ErrorCodeEnum.xg1002);
+                                }
                             }
                         }
 
@@ -377,43 +381,68 @@ public class FlcGoodsService : IDynamicApiController, ITransient
     public long initCategory(UploadFileGoodsInput input)
     {
         var frist_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.oneClass && x.IsDelete == false).First();
-        if (frist_class != null)
+        var input_category = _rep.Context.Queryable<FlcGoodsSku>()
+    .LeftJoin<FlcGoods>((sku, good) => sku.GoodsId == good.Id)
+    .LeftJoin<FlcCategory>((sku, good, category) => good.CategoryId == category.Id)
+    .Where(sku=>sku.BarCode==input.BarCard && sku.IsDelete == false)
+    .Select((sku,goods, category)=> category)
+    .ToList();
+        if (frist_class != null||input_category.Count>0)
         {
-            var two_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.TwoClass && x.IsDelete == false&&x.SuperiorId==frist_class.Id).First();
-            if (two_class != null)
+            if(input_category.Count>0)
             {
-                var three_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.ThreeClass && x.IsDelete == false && x.SuperiorId == two_class.Id).First();
-                if (three_class == null)
+                var entity = input_category.Where(u => u.SuperiorId == null || u.SuperiorId == 0).FirstOrDefault();
+                entity.CategoryName = input.oneClass;
+                var entity_tow = input_category.Where(u => u.SuperiorId == entity.Id).FirstOrDefault();
+                entity_tow.CategoryName = input.TwoClass;
+                var entity_three = input_category.Where(u => u.SuperiorId == entity_tow.Id).FirstOrDefault();
+                entity_three.CategoryName = input.ThreeClass;
+                List<FlcCategory> update_list= new List<FlcCategory>()
                 {
-                    FlcCategory obj= new FlcCategory()
-                    {
-                        CategoryName= input.ThreeClass,
-                        SuperiorId= two_class.Id,
-                    };
-                    long id_three= _rep.Context.Insertable<FlcCategory>(obj).ExecuteReturnSnowflakeId();
-                    return id_three;
-                }
-                else
-                {
-                    return three_class.Id;
-                }
+                    entity, entity_tow, entity_three
+                };
+                _rep.Context.Updateable(update_list).ExecuteCommand();
+                return entity_three.Id;
             }
             else
             {
-                FlcCategory obj_two = new FlcCategory()
+                var two_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.TwoClass && x.IsDelete == false && x.SuperiorId == frist_class.Id).First();
+                if (two_class != null)
                 {
-                    CategoryName = input.TwoClass,
-                    SuperiorId = frist_class.Id,
-                };
-                long id_two = _rep.Context.Insertable(obj_two).ExecuteReturnSnowflakeId();
-                FlcCategory obj_three = new FlcCategory()
+                    var three_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.ThreeClass && x.IsDelete == false && x.SuperiorId == two_class.Id).First();
+                    if (three_class == null)
+                    {
+                        FlcCategory obj = new FlcCategory()
+                        {
+                            CategoryName = input.ThreeClass,
+                            SuperiorId = two_class.Id,
+                        };
+                        long id_three = _rep.Context.Insertable<FlcCategory>(obj).ExecuteReturnSnowflakeId();
+                        return id_three;
+                    }
+                    else
+                    {
+                        return three_class.Id;
+                    }
+                }
+                else
                 {
-                    CategoryName = input.ThreeClass,
-                    SuperiorId = id_two,
-                };
-                long id_three = _rep.Context.Insertable<FlcCategory>(obj_three).ExecuteReturnSnowflakeId();
-                return id_three;
+                    FlcCategory obj_two = new FlcCategory()
+                    {
+                        CategoryName = input.TwoClass,
+                        SuperiorId = frist_class.Id,
+                    };
+                    long id_two = _rep.Context.Insertable(obj_two).ExecuteReturnSnowflakeId();
+                    FlcCategory obj_three = new FlcCategory()
+                    {
+                        CategoryName = input.ThreeClass,
+                        SuperiorId = id_two,
+                    };
+                    long id_three = _rep.Context.Insertable<FlcCategory>(obj_three).ExecuteReturnSnowflakeId();
+                    return id_three;
+                }
             }
+           
         }
         else
         {
@@ -440,8 +469,13 @@ public class FlcGoodsService : IDynamicApiController, ITransient
     }
     public long initGoods(UploadFileGoodsInput input,long CategoryId)
     {
-        var row= _rep.AsQueryable().Where(x=>x.GoodsName==input.GoodsName && x.IsDelete == false).First();
-        if (row == null)
+        //var row= _rep.AsQueryable().Where(x=>x.GoodsName==input.GoodsName && x.IsDelete == false).First();
+        var query=_rep.AsQueryable()
+            .LeftJoin<FlcGoodsSku>((g,sku)=>g.Id==sku.GoodsId)
+            .Where((g,sku)=>sku.BarCode==input.BarCard && sku.IsDelete == false)
+            .Select(g=>g)
+            .First();
+        if (query == null)
         {
             FlcGoods flcGoods = new FlcGoods()
             {
@@ -454,11 +488,11 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
         else
         {
-            row.Weight= input.Weight;
-            row.CategoryId= CategoryId;
-            row.Producer= input.Producer;
-            _rep.Context.Updateable(row).ExecuteCommand();
-            return row.Id;
+            query.Weight= input.Weight;
+            query.CategoryId= CategoryId;
+            query.Producer= input.Producer;
+            _rep.Context.Updateable(query).ExecuteCommand();
+            return query.Id;
         }
     }
 
@@ -526,7 +560,15 @@ public class FlcGoodsService : IDynamicApiController, ITransient
             .LeftJoin<FlcGoodsSku>((x,k)=>x.SkuId==k.Id)
             .LeftJoin<FlcGoods>((x,k,g)=>k.GoodsId==g.Id)
             .Where((x, k, g) => x.IsDelete==false && k.IsDelete == false && x.SpeValueId == spev.Id&&g.IsDelete==false ).First();
-        if(skuspe == null)
+        var sku_entity = _rep.Context.Queryable<FlcGoodsSku>()
+            .LeftJoin<FlcSkuSpeValue>((sku,link)=>sku.Id==link.SkuId)
+            .Where((sku,link)=>sku.BarCode==input.BarCard&&sku.IsDelete==false)
+            .Select((sku, link) =>new
+            {
+                sku,link
+            })
+            .First();
+        if(sku_entity == null)
         {
             FlcGoodsSku sku = new FlcGoodsSku()
             {
@@ -548,16 +590,20 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
         else
         {
-            var sku_row= _rep.Context.Queryable<FlcGoodsSku>()
-            .LeftJoin<FlcSkuSpeValue>((x, k) => k.SkuId == x.Id)
-            .LeftJoin<FlcGoods>((x, k, g) => x.GoodsId == g.Id)
-            .Where((x, k, g) => x.IsDelete == false&&k.IsDelete==false && k.SpeValueId == spev.Id && g.IsDelete == false).First();
+            //var sku_row= _rep.Context.Queryable<FlcGoodsSku>()
+            //.LeftJoin<FlcSkuSpeValue>((x, k) => k.SkuId == x.Id)
+            //.LeftJoin<FlcGoods>((x, k, g) => x.GoodsId == g.Id)
+            //.Where((x, k, g) => x.IsDelete == false&&k.IsDelete==false && k.SpeValueId == spev.Id && g.IsDelete == false).First();
+            var sku_row = sku_entity.sku;
             sku_row.UnitId = UnitId;
             sku_row.CostPrice = string.IsNullOrEmpty(input.costPrice) ? null : Convert.ToDecimal(input.costPrice);
             sku_row.SalesPrice = string.IsNullOrEmpty(input.RetailPrice) ? null : Convert.ToDecimal(input.RetailPrice);
             sku_row.PrintCustom = input.PrintCustom;
             sku_row.BarCode = input.BarCard;
             _rep.Context.Updateable(sku_row).ExecuteCommand();
+            var link=sku_entity.link;
+            link.SpeValueId= spev.Id;
+            _rep.Context.Updateable(link).ExecuteCommand();
             return sku_row.Id;
         }
        

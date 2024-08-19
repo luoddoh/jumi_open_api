@@ -3,6 +3,8 @@ using Admin.NET.Application.Const;
 using Admin.NET.Application.Entity;
 using Microsoft.AspNetCore.Http;
 using Admin.NET.Core;
+using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
+using static SKIT.FlurlHttpClient.Wechat.Api.Models.WxaBusinessPerformanceBootResponse.Types.Data.Types.Body.Types.Table.Types;
 namespace Admin.NET.Application;
 /// <summary>
 /// 商品sku表服务
@@ -40,6 +42,13 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
             }
 
         }
+        var no_query = _rep.Context.Queryable<FlcGoodsSku>()
+            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId)
+            .LeftJoin<FlcSpecificationValue>((sku, link, val)=> link.SpeValueId==val.Id)
+            .LeftJoin<FlcProductSpecifications>((sku, link, val,spe)=>val.SpecificationId==spe.Id)
+            .Where((sku, link, val, spe)=>sku.IsDelete==false&&spe.Enable==false)
+            .Select((sku, link, val, spe) => sku.Id)
+            .ToList();
         var db = _rep.Context;
         var db_v = _rep_v.Context;
         var list = db.Queryable<FlcGoodsSku>()
@@ -49,6 +58,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
            .LeftJoin<FlcInventory>((x,p)=>x.Id==p.SkuId)
            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey),x=>x.flcGoods.GoodsName.Contains(input.SearchKey))
            .WhereIF(!string.IsNullOrWhiteSpace(barcode), x => x.BarCode== barcode)
+           .WhereIF(no_query.Count>0, x => !no_query.Contains(x.Id))
             .Where(x => x.IsDelete == false)
             .Select((x,p)=>new FlcGoodsSkuOutputs
             {
@@ -67,7 +77,8 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
 
         db.ThenMapper(list, sku =>
         {
-            sku.speValueList = _rep_v.AsQueryable().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
+            sku.speValueList = _rep_v.AsQueryable().Includes(x => x.FlcSpecificationValue)
+            .Where(x => x.IsDelete == false)
             .SetContext(x => x.SkuId, () => sku.Id, sku)
             .Select(x => new labval
             {

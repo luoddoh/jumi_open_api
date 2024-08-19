@@ -3,6 +3,7 @@ using Admin.NET.Application.Const;
 using Admin.NET.Application.Entity;
 using Microsoft.AspNetCore.Http;
 using Admin.NET.Application.Service.FlcProcureReturnDetail.Dto;
+using NPOI.SS.Formula.Functions;
 namespace Admin.NET.Application;
 /// <summary>
 /// 退货明细服务
@@ -69,8 +70,9 @@ public class FlcProcureReturnDetailService : IDynamicApiController, ITransient
             .LeftJoin <FlcInventory>((x,inv)=>x.SkuId==inv.SkuId)
             .LeftJoin<FlcGoods>((x, inv,good) => x.GoodsId==good.Id)
             .LeftJoin<FlcGoodsUnit>((x, inv, good,unit) => x.UnitId == unit.Id)
+            .LeftJoin<FlcGoodsSku>((x, inv, good, unit,sku)=>x.SkuId==sku.Id)
             .Where(x=>x.ReturnId==input.ReturnId&&x.IsDelete==false)
-            .Select((x,inv,good, unit) =>new FlcProcureReturnDetailOutput()
+            .Select((x,inv,good, unit,sku) =>new FlcProcureReturnDetailOutput()
             {
                 Id=x.Id,
                 GoodsId = x.ReturnId,
@@ -79,6 +81,7 @@ public class FlcProcureReturnDetailService : IDynamicApiController, ITransient
                 ReturnPrice=x.ReturnPrice,
                 InventoryNum=inv.Number,
                 SkuId=x.SkuId,
+                SkuImage=sku.CoverImage,
                 TotalAmount=x.TotalAmount,
                 Remark=x.Remark,
                 GoodsName= good.GoodsName,

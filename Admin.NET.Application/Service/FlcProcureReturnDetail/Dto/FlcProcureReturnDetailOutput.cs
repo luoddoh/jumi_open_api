@@ -45,7 +45,7 @@ public class FlcProcureReturnDetailOutput
     /// </summary>
     public long? UnitId { get; set; }
 
-
+    public string? SkuImage { get; set; }
     /// <summary>
     /// 单位名
     /// </summary>

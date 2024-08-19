@@ -101,6 +101,16 @@ public class FlcProductSpecificationsService : IDynamicApiController, ITransient
     {
         var entity = input.Adapt<FlcProductSpecifications>();
         var db = _rep.Context;
+        var svalue_all=_rep.Context.Queryable<FlcSpecificationValue>().Where(u=>u.SpecificationId==entity.Id).ToList();
+        var svalue_update = entity.SpeValues.Select(u => u.Id).ToList();
+        var svalue_delete= svalue_all.Where(u=>!svalue_update.Contains(u.Id)).Select(u=>u.Id).ToList();
+        var use_ok=_rep.Context.Queryable<FlcSkuSpeValue>().LeftJoin<FlcGoodsSku>((line,sku)=>line.SkuId==sku.Id)
+            .Where((line,sku)=>sku.IsDelete==false&&line.IsDelete==false)
+            .Where((line,sku)=>svalue_delete.Contains((long)line.SpeValueId)).ToList();
+        if (use_ok != null && use_ok.Count > 0)
+        {
+            throw Oops.Oh(ErrorCodeEnum.D1007);
+        }
 
         await db.UpdateNav(entity)
             .Include(z1 => z1.SpeValues,new SqlSugar.UpdateNavOptions()
