@@ -42,6 +42,7 @@ public class FlcInventoryOutStatisticsService : IDynamicApiController, ITransien
         var categoryData=_Category.AsQueryable().Where(u=>u.IsDelete==false).ToList();
         var query = _rep.AsQueryable()
             .WhereIF(input.OperatorId!=null,u=>u.Operator==input.OperatorId)
+            .WhereIF(input.docTimeRange != null, u => u.OutTime >= input.docTimeRange[0] && u.OutTime <= input.docTimeRange[1])
             .LeftJoin<FlcInventoryOutDetail>((u,d)=>u.Id==d.OutId)
             .Where((u,d)=>u.IsDelete==false&&d.IsDelete==false)
             .LeftJoin<SysUser>((u, d, user) => u.Operator== user.Id&& user.IsDelete==false)
@@ -63,7 +64,7 @@ public class FlcInventoryOutStatisticsService : IDynamicApiController, ITransien
             .Where((sku,goods)=>sku.IsDelete==false&&goods.IsDelete==false)
             .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName),(sku,goods)=>goods.GoodsName.Contains(input.goodsName))
             .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (sku, goods) => goods.ProductCode== input.goodsCode)
-            .WhereIF(input.categoryId!=null, (sku, goods) => input.categoryId.Contains(goods.CategoryId))
+            .WhereIF(input.categoryId!=null&&input.categoryId.Count>0, (sku, goods) => input.categoryId.Contains(goods.CategoryId))
              .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (sku, goods) => sku.BarCode==input.barCode)
             .Select((sku,goods)=>new FlcInventoryOutStatisticsOutput
             {
@@ -287,7 +288,7 @@ public class FlcInventoryOutStatisticsService : IDynamicApiController, ITransien
         {
             if (query.SuperiorId > 0)
             {
-                return query.CategoryName +"/"+ getTreeCategoryName(data, (long)query.SuperiorId);
+                return getTreeCategoryName(data, (long)query.SuperiorId)  +"/"+ query.CategoryName;
             }
             else
             {

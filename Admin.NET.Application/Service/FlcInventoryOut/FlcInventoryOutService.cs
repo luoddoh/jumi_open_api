@@ -47,6 +47,7 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
             //处理外键和TreeSelector相关字段的连接
             .LeftJoin<SysUser>((u, reviewer) => u.Reviewer == reviewer.Id )
             .LeftJoin<SysUser>((u, reviewer, Operator) => u.Operator == Operator.Id)
+            .WhereIF(input.OperatorId>0,(u, reviewer, Operator) =>Operator.Id==input.OperatorId)
             .OrderBy(u => u.CreateTime, OrderByType.Desc)
             .Select((u, reviewer, Operator) => new FlcInventoryOutOutput
             {
