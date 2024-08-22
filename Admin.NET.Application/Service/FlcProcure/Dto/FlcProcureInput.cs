@@ -68,16 +68,26 @@ namespace Admin.NET.Application;
     /// 小程序登录用户id
     /// </summary>
     public long? uid { get; set; }
-
+    /// <summary>
+    /// sku_id
+    /// </summary>
+    public long? sku_id { get; set; }
     /// <summary>
     /// 关键字查询
     /// </summary>
     public string? SearchKey { get; set; }
-
-        /// <summary>
-        /// 单据号
-        /// </summary>
-        public string? DocNumber { get; set; }
+    #region 统计使用
+    public string? goodsName { get; set; }
+    public string? goodsCode { get; set; }
+    public string? skuName { get; set; }
+    public string? barCode { get; set; }
+    public long? OperatorId { get; set; }
+    public List<long>? categoryId { get; set; }
+    #endregion
+    /// <summary>
+    /// 单据号
+    /// </summary>
+    public string? DocNumber { get; set; }
         
         /// <summary>
         /// 供应商

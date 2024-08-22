@@ -35,6 +35,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
                 u.DocNumber.Contains(input.SearchKey.Trim())
             )
                 .Where(u => u.IsDelete == false)
+                .WhereIF(input.sku_id!=null,u=>u.ProcureDetail.Any(z=>z.SkuId==input.sku_id))
             .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
             .WhereIF(input.SupplierId>0, u => u.SupplierId == input.SupplierId)
             .WhereIF(input.State>0, u => u.State == input.State)
@@ -133,6 +134,11 @@ public class FlcProcureService : IDynamicApiController, ITransient
             .LeftJoin<FlcSupplierInfo>((u, d, s, t, g, i) => u.SupplierId == i.Id && i.IsDelete == false)
             .LeftJoin<SysUser>((u, d, s, t, g, i, purchaser) => u.Purchaser == purchaser.Id)
             .LeftJoin<SysUser>((u, d, s, t, g, i, purchaser, reviewer) => u.Reviewer == reviewer.Id)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName), (u, d, s, t, g, purchaser, reviewer) => g.GoodsName.Contains(input.goodsName))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (u, d, s, t, g, purchaser, reviewer) => g.ProductCode.Contains(input.goodsCode))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (u, d, s, t, g, purchaser, reviewer) => s.BarCode == input.barCode)
+            .WhereIF(input.OperatorId > 0, (u, d, s, t, g, purchaser, reviewer) => purchaser.Id == input.OperatorId)
+            .WhereIF(input.categoryId != null, (u, d, s, t, g, purchaser, reviewer) => input.categoryId.Contains(g.CategoryId))
             .Select((u, d, s, t, g, i, purchaser, reviewer) => new ProcureDetail
             {
                 DocNumber = u.DocNumber,
@@ -176,26 +182,10 @@ public class FlcProcureService : IDynamicApiController, ITransient
         {
             var info = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
             .SetContext(x => x.SkuId, () => item.SkuId, item)
-            .Select(x => new labval
-            {
-                Id = x.SpeValueId,
-                SpecificationId = x.FlcSpecificationValue.SpecificationId,
-                SpeValue = x.FlcSpecificationValue.SpeValue
-            }).ToList();
-            string value = "";
-            foreach (var ele in info)
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    value = ele.SpeValue;
-                }
-                else
-                {
-                    value += "/" + ele.SpeValue;
-                }
-            }
-            item.speValueList = value;
+            .Select(x => x.FlcSpecificationValue.SpeValue).ToList();
+            item.speValueList = string.Join("/", info);
         });
+        list = list.WhereIF(!string.IsNullOrWhiteSpace(input.skuName), u => u.speValueList.Contains(input.skuName)).ToList();
         return list.ToPagedList(input.Page, input.PageSize);
     }
 

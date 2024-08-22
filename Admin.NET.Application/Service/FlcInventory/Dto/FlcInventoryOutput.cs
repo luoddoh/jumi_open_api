@@ -49,6 +49,7 @@ public class FlcOutputpage<TEntity> : SqlSugarPagedList<TEntity>
 {
     public int? TotalNumber { get; set; }
     public decimal? TotalAmount { get; set; }
+    public int? planTotalNumber { get; set; }
 }
 
 

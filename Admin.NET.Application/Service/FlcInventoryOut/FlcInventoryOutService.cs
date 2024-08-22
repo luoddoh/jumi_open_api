@@ -23,14 +23,22 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
     /// <returns></returns>
     [HttpPost]
     [ApiDescriptionSettings(Name = "Page")]
-    public async Task<SqlSugarPagedList<FlcInventoryOutOutput>> Page(FlcInventoryOutInput input)
+    public SqlSugarPagedList<FlcInventoryOutOutput> Page(FlcInventoryOutInput input)
     {
+        var query_num= _rep.Context.Queryable<FlcInventoryOutDetail>().GroupBy(u=>u.OutId)
+            .Select(u=>new
+            {
+                u.OutId,
+                TotalAmount = SqlFunc.AggregateSumNoNull(u.TotalAmount),
+            })
+            .ToList();
         var query = _rep.AsQueryable()
             .Where(x=>x.IsDelete == false)
             .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey), u =>
                 u.DocNumber.Contains(input.SearchKey.Trim())
                 || u.Remark.Contains(input.SearchKey.Trim())
             )
+            .WhereIF(input.sku_id != null, u => u.InventoryOutDetail.Any(z => z.SkuId == input.sku_id))
             .WhereIF(!string.IsNullOrWhiteSpace(input.DocNumber), u => u.DocNumber.Contains(input.DocNumber.Trim()))
             .WhereIF(!string.IsNullOrWhiteSpace(input.OutType), u => u.OutType == input.OutType)
             .WhereIF(!string.IsNullOrWhiteSpace(input.Remark), u => u.Remark.Contains(input.Remark.Trim()))
@@ -72,8 +80,24 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
                 var end = input.ReviewerTimeRange[1].Value.AddDays(1);
                 query = query.Where(u => u.ReviewerTime < end);
             }
-        } 
-        return await query.ToPagedListAsync(input.Page, input.PageSize);
+        }
+        decimal totalAmount = 0;
+        var result_query=  query.ToList();
+        foreach (var item in result_query)
+        {
+            item.TotalAmount = query_num.Where(u => u.OutId == item.Id).Select(u => u.TotalAmount).FirstOrDefault();
+            totalAmount +=(decimal)item.TotalAmount;
+        }
+        var a = result_query.ToPagedList(input.Page, input.PageSize);
+        var result = new FlcOutputpage<FlcInventoryOutOutput>
+        {
+            Page = a.Page,
+            PageSize = a.PageSize,
+            Items = a.Items,
+            Total = a.Total,
+            TotalAmount = totalAmount,
+        };
+        return result;
     }
     /// <summary>
     /// 导出详情查询数据
@@ -94,13 +118,18 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
             .WhereIF(!string.IsNullOrWhiteSpace(input.OutType), u => u.OutType == input.OutType)
             .WhereIF(!string.IsNullOrWhiteSpace(input.Remark), u => u.Remark.Contains(input.Remark.Trim()))
             .WhereIF(input.Reviewer > 0, u => u.Reviewer == input.Reviewer)
-             .WhereIF((input.Uid > 0 && input.Uid != 1300000000101 && input.Uid != 1300000000111), u => (u.Operator == input.Uid || u.CreateUserId == input.Uid))
+            .WhereIF((input.Uid > 0 && input.Uid != 1300000000101 && input.Uid != 1300000000111), u => (u.Operator == input.Uid || u.CreateUserId == input.Uid))
             .LeftJoin<FlcInventoryOutDetail>((u, d) => u.Id == d.OutId && d.IsDelete == false)
             .LeftJoin<FlcGoodsSku>((u, d, s) => d.SkuId == s.Id && s.IsDelete == false)
             .LeftJoin<FlcGoodsUnit>((u, d, s, t) => s.UnitId == t.Id && t.IsDelete == false)
             .LeftJoin<FlcGoods>((u, d, s, t, g) => s.GoodsId == g.Id && g.IsDelete == false)
             .LeftJoin<SysUser>((u, d, s, t, g,  purchaser) => u.Operator == purchaser.Id)
             .LeftJoin<SysUser>((u, d, s, t, g,  purchaser, reviewer) => u.Reviewer == reviewer.Id)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName), (u, d, s, t, g, purchaser, reviewer)=>g.GoodsName.Contains(input.goodsName))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (u, d, s, t, g, purchaser, reviewer) => g.ProductCode.Contains(input.goodsCode))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (u, d, s, t, g, purchaser, reviewer) => s.BarCode== input.barCode)
+            .WhereIF(input.OperatorId>0, (u, d, s, t, g, purchaser, reviewer) => purchaser.Id == input.OperatorId)
+            .WhereIF(input.categoryId!=null, (u, d, s, t, g, purchaser, reviewer) => input.categoryId.Contains(g.CategoryId))
             .Select((u, d, s, t, g, purchaser, reviewer) => new InventoryOutDetail
             {
                 DocNumber = u.DocNumber,
@@ -143,26 +172,10 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
         {
             var info = _rep.Context.Queryable<FlcSkuSpeValue>().Includes(x => x.FlcSpecificationValue).Where(x => x.IsDelete == false)
             .SetContext(x => x.SkuId, () => item.SkuId, item)
-            .Select(x => new labval
-            {
-                Id = x.SpeValueId,
-                SpecificationId = x.FlcSpecificationValue.SpecificationId,
-                SpeValue = x.FlcSpecificationValue.SpeValue
-            }).ToList();
-            string value = "";
-            foreach (var ele in info)
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    value = ele.SpeValue;
-                }
-                else
-                {
-                    value += "/" + ele.SpeValue;
-                }
-            }
-            item.speValueList = value;
+            .Select(x => x.FlcSpecificationValue.SpeValue).ToList();
+            item.speValueList =string.Join("/",info);
         });
+        list = list.WhereIF(!string.IsNullOrWhiteSpace(input.skuName), u => u.speValueList.Contains(input.skuName)).ToList();
         return list.ToPagedList(input.Page, input.PageSize);
     }
 

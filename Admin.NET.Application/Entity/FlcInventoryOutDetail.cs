@@ -30,7 +30,12 @@ public class FlcInventoryOutDetail  : EntityBaseData
     /// </summary>
     [SugarColumn(ColumnName = "Price", ColumnDescription = "成本价", Length = 18, DecimalDigits=2 )]
     public decimal? Price { get; set; }
-    
+
+    /// <summary>
+    /// 计划出库数量
+    /// </summary>
+    [SugarColumn(ColumnName = "PlanOutNum", ColumnDescription = "计划出库数量")]
+    public int? PlanOutNum { get; set; }
     /// <summary>
     /// 出库数量
     /// </summary>

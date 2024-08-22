@@ -58,4 +58,7 @@ public class FlcInventoryOut  : EntityBaseData
     [SugarColumn(ColumnName = "Operator", ColumnDescription = "操作员")]
     public long? Operator { get; set; }
 
+    //用例1：正常一对多
+    [Navigate(NavigateType.OneToMany, nameof(FlcInventoryOutDetail.OutId))]
+    public List<FlcInventoryOutDetail> InventoryOutDetail { get; set; }
 }

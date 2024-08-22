@@ -55,15 +55,24 @@ namespace Admin.NET.Application;
     public class FlcInventoryOutInput : BasePageInput
     {
     public long? Uid { get; set; }
+    public long? sku_id {  get; set; }
         /// <summary>
         /// 关键字查询
         /// </summary>
         public string? SearchKey { get; set; }
 
-        /// <summary>
-        /// 单据号
-        /// </summary>
-        public string? DocNumber { get; set; }
+    #region 统计使用
+    public string? goodsName { get; set; }
+        public string? goodsCode { get; set; }
+        public string? skuName { get; set; }
+        public string? barCode { get; set; }
+        public long? OperatorId { get; set; }
+        public List<long>? categoryId { get; set; }
+    #endregion
+    /// <summary>
+    /// 单据号
+    /// </summary>
+    public string? DocNumber { get; set; }
         
         /// <summary>
         /// 出库类型

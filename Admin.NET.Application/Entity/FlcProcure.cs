@@ -71,4 +71,7 @@ public class FlcProcure  : EntityBaseData
     [SugarColumn(ColumnName = "SupConfirm", ColumnDescription = "供应商确认状态")]
     public bool? SupConfirm { get; set; }
 
+    //用例1：正常一对多
+    [Navigate(NavigateType.OneToMany, nameof(FlcProcureDetail.ProcureId))]
+    public List<FlcProcureDetail> ProcureDetail { get; set; }
 }
