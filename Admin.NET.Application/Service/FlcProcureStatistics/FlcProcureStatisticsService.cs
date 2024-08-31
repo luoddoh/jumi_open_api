@@ -43,66 +43,44 @@ public class FlcProcureStatisticsService : IDynamicApiController, ITransient
             .Where((u,d)=>u.IsDelete==false&&d.IsDelete==false)
             .LeftJoin<FlcSupplierInfo>((u, d, sup) => u.SupplierId==sup.Id&&sup.IsDelete==false)
             .WhereIF(input.supplierId!=null,(u,d)=>u.SupplierId==input.supplierId)
+            .LeftJoin<FlcGoodsSku>((u, d, sup, sku)=>d.SkuId==sku.Id)
+            .LeftJoin<FlcGoods>((u, d, sup, sku, goods) => sku.GoodsId == goods.Id)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName), (u, d, sup, sku, goods) => goods.GoodsName.Contains(input.goodsName))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (u, d, sup, sku, goods) => goods.ProductCode == input.goodsCode)
+            .WhereIF(input.categoryId != null && input.categoryId.Count > 0, (u, d, sup, sku, goods) => input.categoryId.Contains(goods.CategoryId))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (u, d, sup, sku, goods) => sku.BarCode == input.barCode)
             .GroupBy((u,d, sup) =>new
             {
                 d.SkuId,
                 sup.Id,
             })
-            .Select((u, d, sup) => new FlcProcureStatisticsOutput
+            .Select((u, d, sup, sku, goods) => new FlcProcureStatisticsOutput
             {
                 Id = d.SkuId,
                 ProcureTotalAmount= SqlFunc.AggregateSumNoNull(d.totalAmount),
                 supplierId= sup.Id,
                 supplierName = SqlFunc.AggregateMax(sup.SupName),
                 ProcureNumber = SqlFunc.AggregateSumNoNull(d.purchaseNum),
+                GoodsName = SqlFunc.AggregateMax(goods.GoodsName),
+                GoodsCode = SqlFunc.AggregateMax(goods.ProductCode) ,
+                GoodsImg = SqlFunc.AggregateMax(goods.CoverImage) ,
+                SkuBarCode = SqlFunc.AggregateMax(sku.BarCode),
+                Remark = SqlFunc.AggregateMax(sku.PrintCustom) ,
+                categoryId = SqlFunc.AggregateMax(goods.CategoryId),
             })
             .ToList();
-        var query_sku_id= query.Select(u=>u.Id).ToList();
-        var sku_query= _sku.AsQueryable()
-            .Where(u=> query_sku_id.Contains(u.Id))
-            .LeftJoin<FlcGoods>((sku,goods)=>sku.GoodsId==goods.Id)
-            .Where((sku,goods)=>sku.IsDelete==false&&goods.IsDelete==false)
-            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName),(sku,goods)=>goods.GoodsName.Contains(input.goodsName))
-            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (sku, goods) => goods.ProductCode== input.goodsCode)
-            .WhereIF(input.categoryId!=null && input.categoryId.Count > 0, (sku, goods) => input.categoryId.Contains(goods.CategoryId))
-            .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (sku, goods) => sku.BarCode==input.barCode)
-            .Select((sku,goods)=>new FlcProcureStatisticsOutput
-            {
-                Id=sku.Id,
-                GoodsName=goods.GoodsName,
-                GoodsCode=goods.ProductCode,
-                GoodsImg=goods.CoverImage,
-                SkuBarCode=sku.BarCode,
-                Remark=sku.PrintCustom,
-                categoryId=goods.CategoryId,
-            })
-            .ToList();
-        _sku.Context.ThenMapper(sku_query, sku =>
+        int totalNumber = 0;
+        decimal totalAmount = 0;
+        _sku.Context.ThenMapper(query, sku =>
         {
             sku.SkuName = string.Join("/", _rep_v.AsQueryable().Includes(x => x.FlcSpecificationValue)
             .Where(x => x.IsDelete == false)
             .SetContext(x => x.SkuId, () => sku.Id, sku)
             .Select(x => x.FlcSpecificationValue.SpeValue).ToList());
-        });
+            totalNumber += sku.ProcureNumber;
+            totalAmount += sku.ProcureTotalAmount;
 
-        int totalNumber = 0;
-        decimal totalAmount = 0;
-        foreach (var item in query)
-        {
-            var sku_info=sku_query.Where(u=>u.Id==item.Id).FirstOrDefault();
-            if(sku_info != null)
-            {
-                item.GoodsName = sku_info.GoodsName;
-                item.GoodsCode = sku_info.GoodsCode;
-                item.GoodsImg = sku_info.GoodsImg;
-                item.SkuBarCode = sku_info.SkuBarCode;
-                item.Remark = sku_info.Remark;
-                item.categoryId = sku_info.categoryId;
-                item.SkuName = sku_info.SkuName;
-            }
-            totalNumber += item.ProcureNumber;
-            totalAmount += item.ProcureTotalAmount;
-        }
+        });
         query = query
             .WhereIF(!string.IsNullOrWhiteSpace(input.skuName),u=>u.SkuName.Contains(input.skuName))
             .ToList();

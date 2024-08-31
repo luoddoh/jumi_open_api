@@ -10,6 +10,8 @@ using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.IO;
+using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
+using NPOI.SS.Formula.Functions;
 namespace Admin.NET.Application;
 /// <summary>
 /// 库存查询服务
@@ -46,65 +48,48 @@ public class FlcInventoryOutStatisticsService : IDynamicApiController, ITransien
             .LeftJoin<FlcInventoryOutDetail>((u,d)=>u.Id==d.OutId)
             .Where((u,d)=>u.IsDelete==false&&d.IsDelete==false)
             .LeftJoin<SysUser>((u, d, user) => u.Operator== user.Id&& user.IsDelete==false)
+            .LeftJoin<FlcGoodsSku>((u, d, user,sku)=>d.SkuId==sku.Id)
+            .LeftJoin<FlcGoods>((u, d, user, sku, goods) => sku.GoodsId == goods.Id)
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName), (u, d, user, sku, goods) => goods.GoodsName.Contains(input.goodsName))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (u, d, user, sku, goods) => goods.ProductCode == input.goodsCode)
+            .WhereIF(input.categoryId != null && input.categoryId.Count > 0, (u, d, user, sku, goods) => input.categoryId.Contains(goods.CategoryId))
+            .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (u, d, user, sku, goods) => sku.BarCode == input.barCode)
             .GroupBy((u,d, user) =>d.SkuId)
-            .Select((u, d, user) => new
+            .Select((u, d, user, sku, goods) => new FlcInventoryOutStatisticsOutput
             {
-                d.SkuId,
-                OutTotalAmount = SqlFunc.AggregateSumNoNull(d.TotalAmount),
+                Id=(long)d.SkuId,
+                OutTotalAmount = SqlFunc.AggregateSumNoNull((decimal)d.TotalAmount),
                 OperatorId = SqlFunc.AggregateMax(user.Id),
                 OperatorName = SqlFunc.AggregateMax(user.RealName),
-                OutNumber = SqlFunc.AggregateSumNoNull(d.OutNum),
-                PlanOutNumber= SqlFunc.AggregateSumNoNull(d.PlanOutNum),
-            })
-            .ToList();
-        var query_sku_id= query.Select(u=>u.SkuId).ToList();
-        var sku_query= _sku.AsQueryable()
-            .Where(u=> query_sku_id.Contains(u.Id))
-            .LeftJoin<FlcGoods>((sku,goods)=>sku.GoodsId==goods.Id)
-            .Where((sku,goods)=>sku.IsDelete==false&&goods.IsDelete==false)
-            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsName),(sku,goods)=>goods.GoodsName.Contains(input.goodsName))
-            .WhereIF(!string.IsNullOrWhiteSpace(input.goodsCode), (sku, goods) => goods.ProductCode== input.goodsCode)
-            .WhereIF(input.categoryId!=null&&input.categoryId.Count>0, (sku, goods) => input.categoryId.Contains(goods.CategoryId))
-             .WhereIF(!string.IsNullOrWhiteSpace(input.barCode), (sku, goods) => sku.BarCode==input.barCode)
-            .Select((sku,goods)=>new FlcInventoryOutStatisticsOutput
-            {
-                Id=sku.Id,
-                GoodsName=goods.GoodsName,
-                GoodsCode=goods.ProductCode,
-                GoodsImg=goods.CoverImage,
-                SkuBarCode=sku.BarCode,
-                Remark=sku.PrintCustom,
-                categoryId=goods.CategoryId,
+                OutNumber = SqlFunc.AggregateSumNoNull((int)d.OutNum),
+                PlanOutNumber= SqlFunc.AggregateSumNoNull((int)d.PlanOutNum),
+                GoodsName = SqlFunc.AggregateMax(goods.GoodsName),
+                GoodsCode = SqlFunc.AggregateMax(goods.ProductCode),
+                GoodsImg = SqlFunc.AggregateMax(goods.CoverImage),
+                SkuBarCode = SqlFunc.AggregateMax(sku.BarCode),
+                Remark = SqlFunc.AggregateMax(sku.PrintCustom),
+                categoryId = SqlFunc.AggregateMax(goods.CategoryId),
             })
             .ToList();
         int totalNumber = 0;
         int planTotalNumber = 0;
         decimal totalAmount = 0;
-        _sku.Context.ThenMapper(sku_query, sku =>
+        _sku.Context.ThenMapper(query, sku =>
         {
             sku.SkuName = string.Join("/", _rep_v.AsQueryable().Includes(x => x.FlcSpecificationValue)
             .Where(x => x.IsDelete == false)
             .SetContext(x => x.SkuId, () => sku.Id, sku)
             .Select(x => x.FlcSpecificationValue.SpeValue).ToList());
-            var info= query.Where(u=>u.SkuId==sku.Id).FirstOrDefault();
-            if (info != null)
-            {
-                sku.OutTotalAmount = (decimal)info.OutTotalAmount;
-                sku.OperatorId = info.OperatorId;
-                sku.OperatorName = info.OperatorName;
-                sku.OutNumber = (int)info.OutNumber;
-                sku.PlanOutNumber= (int)info.PlanOutNumber;
-            }
             totalNumber += sku.OutNumber;
             totalAmount += sku.OutTotalAmount;
             planTotalNumber += sku.PlanOutNumber;
         });
-        sku_query= sku_query
+        query = query
             .WhereIF(!string.IsNullOrWhiteSpace(input.skuName),u=>u.SkuName.Contains(input.skuName))
             .ToList();
-        int count=sku_query.Count();
-        sku_query= sku_query.Skip((input.Page - 1) * input.PageSize).Take(input.PageSize).ToList();
-        foreach (var sku in sku_query)
+        int count= query.Count();
+        query = query.Skip((input.Page - 1) * input.PageSize).Take(input.PageSize).ToList();
+        foreach (var sku in query)
         {
             sku.CategoryName = getTreeCategoryName(categoryData, sku.categoryId);
         }
@@ -112,7 +97,7 @@ public class FlcInventoryOutStatisticsService : IDynamicApiController, ITransien
         {
             Page = input.Page,
             PageSize = input.PageSize,
-            Items = sku_query,
+            Items = query,
             Total = count,
             TotalAmount = totalAmount,
             TotalNumber = totalNumber,

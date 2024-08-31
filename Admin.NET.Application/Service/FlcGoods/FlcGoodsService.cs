@@ -385,7 +385,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
     .LeftJoin<FlcGoods>((sku, good) => sku.GoodsId == good.Id)
     .LeftJoin<FlcCategory>((sku, good, category) => good.CategoryId == category.Id)
     .Where(sku=>sku.BarCode==input.BarCard && sku.IsDelete == false)
-    .Select((sku,goods, category)=> category)
+    .Select((sku,good, category)=> category)
     .ToList();
         if (frist_class != null||input_category.Count>0)
         {
