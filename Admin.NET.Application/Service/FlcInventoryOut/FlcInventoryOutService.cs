@@ -87,7 +87,7 @@ public class FlcInventoryOutService : IDynamicApiController, ITransient
         foreach (var item in result_query)
         {
             item.TotalAmount = query_num.Where(u => u.OutId == item.Id).Select(u => u.TotalAmount).FirstOrDefault();
-            totalAmount +=(decimal)item.TotalAmount;
+            if(item.TotalAmount!=null) { totalAmount += (decimal)item.TotalAmount; }
         }
         var a = result_query.ToPagedList(input.Page, input.PageSize);
         var result = new FlcOutputpage<FlcInventoryOutOutput>

@@ -48,7 +48,7 @@ public class FlcInventoryOutOutput
     /// <summary>
     /// 审核人 描述
     /// </summary>
-    public string ReviewerRealName { get; set; } 
+    public string? ReviewerRealName { get; set; } 
     
     /// <summary>
     /// 审核时间
