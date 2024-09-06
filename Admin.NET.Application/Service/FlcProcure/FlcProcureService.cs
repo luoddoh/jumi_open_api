@@ -397,6 +397,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
     public async Task<dynamic> FlcSupplierInfoSupplierIdDropdown()
     {
         return await _rep.Context.Queryable<FlcSupplierInfo>()
+            .Where(u=>u.IsDelete==false)
                 .Select(u => new
                 {
                     Label = u.SupName,
@@ -414,6 +415,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
     public async Task<dynamic> SysUserPurchaserDropdown()
     {
         return await _rep.Context.Queryable<SysUser>()
+            .Where (u=>u.IsDelete==false)
                 .Select(u => new
                 {
                     Label = u.RealName,
@@ -429,7 +431,7 @@ public class FlcProcureService : IDynamicApiController, ITransient
     [ApiDescriptionSettings(Name = "SysUserReviewerDropdown"), HttpGet]
     public async Task<dynamic> SysUserReviewerDropdown()
     {
-        return await _rep.Context.Queryable<SysUser>()
+        return await _rep.Context.Queryable<SysUser>().Where(u => u.IsDelete == false)
                 .Select(u => new
                 {
                     Label = u.RealName,

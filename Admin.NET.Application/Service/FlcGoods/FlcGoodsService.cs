@@ -13,6 +13,7 @@ using Nest;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.GrouponCard.Types.Base.Types;
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.WxaBusinessPerformanceBootResponse.Types.Data.Types.Body.Types.Table.Types;
 using NetTaste;
+using NPOI.OpenXmlFormats.Spreadsheet;
 namespace Admin.NET.Application;
 /// <summary>
 /// 商品信息服务
@@ -369,34 +370,48 @@ public class FlcGoodsService : IDynamicApiController, ITransient
                 initspeVal(spe);
             }
         }
+        var no_query = _rep.Context.Queryable<FlcGoodsSku>()
+            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId)
+            .LeftJoin<FlcSpecificationValue>((sku, link, val) => link.SpeValueId == val.Id)
+            .LeftJoin<FlcProductSpecifications>((sku, link, val, spe) => val.SpecificationId == spe.Id)
+            .Where((sku, link, val, spe) => sku.IsDelete == false && spe.Enable == false)
+            .Select((sku, link, val, spe) => sku.Id)
+            .ToList();
+        var no_goods= _rep.Context.Queryable<FlcGoods>()
+            .LeftJoin<FlcProductSpecifications>((goods, spe) => goods.GoodsName == spe.SpeName)
+            .Where((goods, spe) => goods.IsDelete == false && spe.Enable == false)
+            .Select((goods, spe) => goods.Id)
+            .ToList();
         foreach (var input in inputs.table)
         {
-            long CategoryId = initCategory(input);
-            long GoodsId = initGoods(input, CategoryId);
+            long CategoryId = initCategory(input, no_query);
+            long GoodsId = initGoods(input, CategoryId, no_query, no_goods);
             long UnitId = initUnit(input);
-            long skuid= initSku(input, GoodsId, UnitId);
+            long skuid= initSku(input, GoodsId, UnitId, no_query);
             long inventoryId = initInventory(skuid);
         }
     }
-    public long initCategory(UploadFileGoodsInput input)
+    public long initCategory(UploadFileGoodsInput input,List<long> no_query)
     {
         var frist_class = _rep.Context.Queryable<FlcCategory>().Where(x => x.CategoryName == input.oneClass && x.IsDelete == false).First();
         var input_category = _rep.Context.Queryable<FlcGoodsSku>()
-    .LeftJoin<FlcGoods>((sku, good) => sku.GoodsId == good.Id)
+    .LeftJoin<FlcGoods>((sku, good) => sku.GoodsId == good.Id&&good.IsDelete==false)
     .LeftJoin<FlcCategory>((sku, good, category) => good.CategoryId == category.Id)
-    .Where(sku=>sku.BarCode==input.BarCard && sku.IsDelete == false)
+    .WhereIF(no_query.Count>0, (sku, good, category) =>!no_query.Contains(sku.Id))
+    .Where((sku, good, category) => sku.BarCode==input.BarCard && sku.IsDelete == false && category.IsDelete == false)
     .Select((sku,good, category)=> category)
     .ToList();
+        var category = _rep.Context.Queryable<FlcCategory>().ToList();
         if (frist_class != null||input_category.Count>0)
         {
             if(input_category.Count>0)
             {
-                var entity = input_category.Where(u => u.SuperiorId == null || u.SuperiorId == 0).FirstOrDefault();
-                entity.CategoryName = input.oneClass;
-                var entity_tow = input_category.Where(u => u.SuperiorId == entity.Id).FirstOrDefault();
-                entity_tow.CategoryName = input.TwoClass;
-                var entity_three = input_category.Where(u => u.SuperiorId == entity_tow.Id).FirstOrDefault();
+                var entity_three = input_category.FirstOrDefault();
                 entity_three.CategoryName = input.ThreeClass;
+                var entity_tow = category.Where(u => u.Id == entity_three.SuperiorId).FirstOrDefault();
+                entity_tow.CategoryName = input.TwoClass;
+                var entity = category.Where(u => u.Id== entity_tow.SuperiorId).FirstOrDefault();
+                entity.CategoryName = input.oneClass;
                 List<FlcCategory> update_list= new List<FlcCategory>()
                 {
                     entity, entity_tow, entity_three
@@ -467,24 +482,38 @@ public class FlcGoodsService : IDynamicApiController, ITransient
             return id_three;
         }
     }
-    public long initGoods(UploadFileGoodsInput input,long CategoryId)
+    public long initGoods(UploadFileGoodsInput input,long CategoryId, List<long> no_query, List<long> no_goods)
     {
-        //var row= _rep.AsQueryable().Where(x=>x.GoodsName==input.GoodsName && x.IsDelete == false).First();
-        var query=_rep.AsQueryable()
-            .LeftJoin<FlcGoodsSku>((g,sku)=>g.Id==sku.GoodsId)
-            .Where((g,sku)=>sku.BarCode==input.BarCard && sku.IsDelete == false)
-            .Select(g=>g)
-            .First();
+        var query = _rep.AsQueryable().Where(x => x.GoodsName == input.GoodsName && x.IsDelete == false).First();
         if (query == null)
         {
-            FlcGoods flcGoods = new FlcGoods()
+            var row = _rep.AsQueryable()
+                .LeftJoin<FlcGoodsSku>((g, sku) => g.Id == sku.GoodsId)
+                .WhereIF(no_query.Count > 0, (g, sku) => !no_query.Contains(sku.Id))
+                .WhereIF(no_goods.Count > 0, (g, sku) => !no_goods.Contains(g.Id))
+                .Where((g, sku) => sku.BarCode == input.BarCard && sku.IsDelete == false && g.IsDelete == false)
+                .Select(g => g)
+                .First();
+            if (row == null)
             {
-                GoodsName = input.GoodsName,
-                CategoryId= CategoryId,
-                Weight=input.Weight,
-                Producer=input.Producer,
-            };
-            return _rep.Context.Insertable(flcGoods).ExecuteReturnSnowflakeId();
+                FlcGoods flcGoods = new FlcGoods()
+                {
+                    GoodsName = input.GoodsName,
+                    CategoryId = CategoryId,
+                    Weight = input.Weight,
+                    Producer = input.Producer,
+                };
+                return _rep.Context.Insertable(flcGoods).ExecuteReturnSnowflakeId();
+            }
+            else
+            {
+                row.GoodsName = input.GoodsName;
+                row.Weight = input.Weight;
+                row.CategoryId = CategoryId;
+                row.Producer = input.Producer;
+                _rep.Context.Updateable(row).ExecuteCommand();
+                return row.Id;
+            }
         }
         else
         {
@@ -551,24 +580,24 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
     }
 
-    public long initSku(UploadFileGoodsInput input, long GoodsId, long UnitId)
+    public long initSku(UploadFileGoodsInput input, long GoodsId, long UnitId, List<long> no_query)
     {
         var spev=_rep.Context.Queryable<FlcSpecificationValue>()
             .LeftJoin<FlcProductSpecifications>((v,s)=>v.SpecificationId==s.Id&&s.IsDelete==false)
             .Where((v,s)=> s.SpeName == input.GoodsName&& v.SpeValue==input.SkuCode).First();
-        var skuspe= _rep.Context.Queryable<FlcSkuSpeValue>()
-            .LeftJoin<FlcGoodsSku>((x,k)=>x.SkuId==k.Id)
-            .LeftJoin<FlcGoods>((x,k,g)=>k.GoodsId==g.Id)
-            .Where((x, k, g) => x.IsDelete==false && k.IsDelete == false && x.SpeValueId == spev.Id&&g.IsDelete==false ).First();
         var sku_entity = _rep.Context.Queryable<FlcGoodsSku>()
             .LeftJoin<FlcSkuSpeValue>((sku,link)=>sku.Id==link.SkuId)
-            .Where((sku,link)=>sku.BarCode==input.BarCard&&sku.IsDelete==false)
-            .Select((sku, link) =>new
-            {
-                sku,link
-            })
+             .WhereIF(no_query.Count > 0, (sku, link) => !no_query.Contains(sku.Id))
+            .Where((sku,link)=>sku.BarCode==input.BarCard&&sku.IsDelete==false&&sku.GoodsId==GoodsId)
+            .Select((sku, link) => sku)
             .First();
-        if(sku_entity == null)
+        var link_entity = _rep.Context.Queryable<FlcGoodsSku>()
+           .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId)
+           .WhereIF(no_query.Count > 0, (sku, link) => !no_query.Contains(sku.Id))
+           .Where((sku, link) => sku.BarCode == input.BarCard && sku.IsDelete == false && sku.GoodsId == GoodsId)
+           .Select((sku, link) => link)
+           .First();
+        if (sku_entity == null)
         {
             FlcGoodsSku sku = new FlcGoodsSku()
             {
@@ -590,18 +619,14 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
         else
         {
-            //var sku_row= _rep.Context.Queryable<FlcGoodsSku>()
-            //.LeftJoin<FlcSkuSpeValue>((x, k) => k.SkuId == x.Id)
-            //.LeftJoin<FlcGoods>((x, k, g) => x.GoodsId == g.Id)
-            //.Where((x, k, g) => x.IsDelete == false&&k.IsDelete==false && k.SpeValueId == spev.Id && g.IsDelete == false).First();
-            var sku_row = sku_entity.sku;
+            var sku_row = sku_entity;
             sku_row.UnitId = UnitId;
             sku_row.CostPrice = string.IsNullOrEmpty(input.costPrice) ? null : Convert.ToDecimal(input.costPrice);
             sku_row.SalesPrice = string.IsNullOrEmpty(input.RetailPrice) ? null : Convert.ToDecimal(input.RetailPrice);
             sku_row.PrintCustom = input.PrintCustom;
             sku_row.BarCode = input.BarCard;
             _rep.Context.Updateable(sku_row).ExecuteCommand();
-            var link=sku_entity.link;
+            var link= link_entity;
             link.SpeValueId= spev.Id;
             _rep.Context.Updateable(link).ExecuteCommand();
             return sku_row.Id;
