@@ -262,7 +262,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
     }
 
     /// <summary>
-    /// 获取商品sku表列表
+    /// 合并重复sku数据
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
