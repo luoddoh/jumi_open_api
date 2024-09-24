@@ -14,6 +14,8 @@ using static SKIT.FlurlHttpClient.Wechat.Api.Models.CardCreateRequest.Types.Grou
 using static SKIT.FlurlHttpClient.Wechat.Api.Models.WxaBusinessPerformanceBootResponse.Types.Data.Types.Body.Types.Table.Types;
 using NetTaste;
 using NPOI.OpenXmlFormats.Spreadsheet;
+using Newtonsoft.Json;
+using Admin.NET.Application.Tool;
 namespace Admin.NET.Application;
 /// <summary>
 /// 商品信息服务
@@ -361,7 +363,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
 
     [HttpPost]
     [ApiDescriptionSettings(Name = "DateSave")]
-    public async Task DateSave(SaveInput inputs)
+    public async Task<string> DateSave(SaveInput inputs)
     {
         if (inputs.speVals != null)
         {
@@ -371,7 +373,7 @@ public class FlcGoodsService : IDynamicApiController, ITransient
             }
         }
         var no_query = _rep.Context.Queryable<FlcGoodsSku>()
-            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId)
+            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId && link.IsDelete == false)
             .LeftJoin<FlcSpecificationValue>((sku, link, val) => link.SpeValueId == val.Id)
             .LeftJoin<FlcProductSpecifications>((sku, link, val, spe) => val.SpecificationId == spe.Id)
             .Where((sku, link, val, spe) => sku.IsDelete == false && spe.Enable == false)
@@ -384,12 +386,26 @@ public class FlcGoodsService : IDynamicApiController, ITransient
             .ToList();
         foreach (var input in inputs.table)
         {
-            long CategoryId = initCategory(input, no_query);
-            long GoodsId = initGoods(input, CategoryId, no_query, no_goods);
-            long UnitId = initUnit(input);
-            long skuid= initSku(input, GoodsId, UnitId, no_query);
-            long inventoryId = initInventory(skuid);
+            long c=0, g=0, u=0, s=0, i = 0;
+            try
+            {
+                long CategoryId = initCategory(input, no_query);
+                c = CategoryId;
+                long GoodsId = initGoods(input, CategoryId, no_query, no_goods);
+                g=GoodsId;
+                long UnitId = initUnit(input);
+                u=UnitId;
+                long skuid = initSku(input, GoodsId, UnitId);
+                s=skuid;
+                long inventoryId = initInventory(skuid);
+                i=inventoryId;
+            }
+            catch (Exception e)
+            {
+                Log.error($"保存出错:sku编码：{input.SkuCode}，CategoryId={c}，GoodsId={g}，UnitId={u}，skuid={s}，inventoryId={i}，错误信息:{e.Message}");
+            }
         }
+        return "";
     }
     public long initCategory(UploadFileGoodsInput input,List<long> no_query)
     {
@@ -580,24 +596,21 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
     }
 
-    public long initSku(UploadFileGoodsInput input, long GoodsId, long UnitId, List<long> no_query)
+    public long initSku(UploadFileGoodsInput input, long GoodsId, long UnitId)
     {
         var spev=_rep.Context.Queryable<FlcSpecificationValue>()
             .LeftJoin<FlcProductSpecifications>((v,s)=>v.SpecificationId==s.Id&&s.IsDelete==false)
-            .Where((v,s)=> s.SpeName == input.GoodsName&& v.SpeValue==input.SkuCode).First();
+            .Where((v,s)=> s.SpeName == input.GoodsName&& v.SpeValue==input.SkuCode&&s.Enable==true).First();
         var sku_entity = _rep.Context.Queryable<FlcGoodsSku>()
-            .LeftJoin<FlcSkuSpeValue>((sku,link)=>sku.Id==link.SkuId)
-             .WhereIF(no_query.Count > 0, (sku, link) => !no_query.Contains(sku.Id))
-            .Where((sku,link)=>sku.BarCode==input.BarCard&&sku.IsDelete==false&&sku.GoodsId==GoodsId)
-            .Select((sku, link) => sku)
-            .First();
+            .Where((sku)=>sku.BarCode==input.BarCard&&sku.IsDelete==false&&sku.GoodsId==GoodsId)
+            .OrderBy((sku)=> sku.CreateTime,OrderByType.Desc)
+            .ToList();
         var link_entity = _rep.Context.Queryable<FlcGoodsSku>()
            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId)
-           .WhereIF(no_query.Count > 0, (sku, link) => !no_query.Contains(sku.Id))
-           .Where((sku, link) => sku.BarCode == input.BarCard && sku.IsDelete == false && sku.GoodsId == GoodsId)
+           .Where((sku, link) =>sku.BarCode==input.BarCard&& sku.GoodsId == GoodsId && sku.IsDelete == false&&link.IsDelete==false)
            .Select((sku, link) => link)
-           .First();
-        if (sku_entity == null)
+           .ToList();
+        if (sku_entity.Count==0)
         {
             FlcGoodsSku sku = new FlcGoodsSku()
             {
@@ -619,17 +632,56 @@ public class FlcGoodsService : IDynamicApiController, ITransient
         }
         else
         {
-            var sku_row = sku_entity;
-            sku_row.UnitId = UnitId;
-            sku_row.CostPrice = string.IsNullOrEmpty(input.costPrice) ? null : Convert.ToDecimal(input.costPrice);
-            sku_row.SalesPrice = string.IsNullOrEmpty(input.RetailPrice) ? null : Convert.ToDecimal(input.RetailPrice);
-            sku_row.PrintCustom = input.PrintCustom;
-            sku_row.BarCode = input.BarCard;
-            _rep.Context.Updateable(sku_row).ExecuteCommand();
-            var link= link_entity;
-            link.SpeValueId= spev.Id;
-            _rep.Context.Updateable(link).ExecuteCommand();
-            return sku_row.Id;
+            long sku_id=0;
+            int index = 0;
+            try
+            {
+                for (int i = 0; i < sku_entity.Count; i++)
+                {
+                    index = i;
+                    if (i == 0)
+                    {
+                        var sku_row = sku_entity[i];
+                        sku_row.UnitId = UnitId;
+                        sku_row.CostPrice = string.IsNullOrEmpty(input.costPrice) ? null : Convert.ToDecimal(input.costPrice);
+                        sku_row.SalesPrice = string.IsNullOrEmpty(input.RetailPrice) ? null : Convert.ToDecimal(input.RetailPrice);
+                        sku_row.PrintCustom = input.PrintCustom;
+                        sku_row.BarCode = input.BarCard;
+                        _rep.Context.Updateable(sku_row).ExecuteCommand();
+                        sku_id = sku_row.Id;
+                        var link = link_entity.Where(u => u.SkuId == sku_row.Id).ToList();
+                        if (link.Count == 1)
+                        {
+                            var link_row = link[0];
+                            if (link_row.SpeValueId != spev.Id)
+                            {
+                                _rep.Context.Updateable<FlcSkuSpeValue>().SetColumns(u => u.SpeValueId == spev.Id).Where(u => u.Id == link_row.Id).ExecuteCommand();
+                            }
+
+                        }
+                        else if (link.Count > 1)
+                        {
+                            var link_row = link[0];
+                            if (link_row.SpeValueId != spev.Id)
+                            {
+                                _rep.Context.Updateable<FlcSkuSpeValue>().SetColumns(u => u.SpeValueId == spev.Id).Where(u => u.Id == link_row.Id).ExecuteCommand();
+                            }
+                            link.RemoveAt(0);
+                            _rep.Context.Deleteable(link).IsLogic().ExecuteCommand();
+                        }
+                    }
+                    else
+                    {
+                        var sku_row = sku_entity[i];
+                        _rep.Context.Deleteable(sku_row).IsLogic().ExecuteCommand();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.error($"error:{e.Message},index:{index},obj:{sku_entity.Count}");
+            }
+            return sku_id;
         }
        
     }

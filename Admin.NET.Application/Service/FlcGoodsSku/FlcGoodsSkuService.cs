@@ -44,7 +44,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
 
         }
         var no_query = _rep.Context.Queryable<FlcGoodsSku>()
-            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId)
+            .LeftJoin<FlcSkuSpeValue>((sku, link) => sku.Id == link.SkuId&&link.IsDelete==false)
             .LeftJoin<FlcSpecificationValue>((sku, link, val)=> link.SpeValueId==val.Id)
             .LeftJoin<FlcProductSpecifications>((sku, link, val,spe)=>val.SpecificationId==spe.Id)
             .Where((sku, link, val, spe)=>sku.IsDelete==false&&spe.Enable==false)
@@ -65,7 +65,7 @@ public class FlcGoodsSkuService : IDynamicApiController, ITransient
            .WhereIF(!string.IsNullOrWhiteSpace(input.SearchKey),x=>x.flcGoods.GoodsName.Contains(input.SearchKey))
            .WhereIF(!string.IsNullOrWhiteSpace(barcode), x => x.BarCode== barcode)
            .WhereIF(no_good.Count > 0, x => !no_good.Contains(x.GoodsId))
-           .WhereIF(no_query.Count>0, x => !no_query.Contains(x.Id))
+           .WhereIF(no_query.Count > 0, x => !no_query.Contains(x.Id))
             .Where(x => x.IsDelete == false)
             .Select((x,p)=>new FlcGoodsSkuOutputs
             {
